@@ -1,0 +1,548 @@
+// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+library compiler_test;
+
+import 'package:unittest/unittest.dart';
+import 'package:unittest/vm_config.dart';
+import 'testing.dart';
+import 'package:csslib/parser.dart';
+
+void testClass() {
+  var cssErrors = [];
+
+  var input = ".foobar {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(cssErrors.isEmpty, true);
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+
+  // TODO(terry): When topLevels[0] is replaced with rulesets[0] then this can
+  //              be a var and not an explicit type.
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  // TODO(terry): When above TODO (topLevels replace with rulesets[0] then
+  //              selectorSeqs can be a var instead of explicit type.
+  List<SimpleSelectorSequence> selectorSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  expect(selectorSeqs.length, 1);
+  final simpSelector = selectorSeqs[0].simpleSelector;
+  expect(simpSelector is ClassSelector, true);
+  expect(selectorSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector.name, "foobar");
+}
+
+void testClass2() {
+  var input = ".foobar .bar .no-story {}";
+  var cssErrors = [];
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 3);
+
+  var simpSelector0 = simpleSeqs[0].simpleSelector;
+  expect(simpSelector0 is ClassSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector0.name, "foobar");
+
+  var simpSelector1 = simpleSeqs[1].simpleSelector;
+  expect(simpSelector1 is ClassSelector, true);
+  expect(simpleSeqs[1].isCombinatorDescendant(), true);
+  expect(simpSelector1.name, "bar");
+
+  var simpSelector2 = simpleSeqs[2].simpleSelector;
+  expect(simpSelector2 is ClassSelector, true);
+  expect(simpleSeqs[2].isCombinatorDescendant(), true);
+  expect(simpSelector2.name, "no-story");
+}
+
+void testId() {
+  var cssErrors = [];
+
+  var input = "#elemId {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 1);
+  var simpSelector = simpleSeqs[0].simpleSelector;
+  expect(simpSelector is IdSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector.name, "elemId");
+}
+
+void testElement() {
+  var cssErrors = [];
+
+  var input = "div {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 1);
+
+  final simpSelector = simpleSeqs[0].simpleSelector;
+  expect(simpSelector is ElementSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector.name, "div");
+
+  cssErrors = [];
+  input = "div div span {}";
+  stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 3);
+
+  var simpSelector0 = simpleSeqs[0].simpleSelector;
+  expect(simpSelector0 is ElementSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector0.name, "div");
+
+  var simpSelector1 = simpleSeqs[1].simpleSelector;
+  expect(simpSelector1 is ElementSelector, true);
+  expect(simpleSeqs[1].isCombinatorDescendant(), true);
+  expect(simpSelector1.name, "div");
+
+  var simpSelector2 = simpleSeqs[2].simpleSelector;
+  expect(simpSelector2 is ElementSelector, true);
+  expect(simpleSeqs[2].isCombinatorDescendant(), true);
+  expect(simpSelector2.name, "span");
+}
+
+void testNamespace() {
+  var cssErrors = [];
+
+  var input = "ns1|div {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 1);
+  var simpSelector = simpleSeqs[0].simpleSelector;
+  expect(simpSelector is NamespaceSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector.isNamespaceWildcard(), false);
+  expect(simpSelector.namespace, "ns1");
+  ElementSelector elementSelector = simpSelector.nameAsSimpleSelector;
+  expect(elementSelector is ElementSelector, true);
+  expect(elementSelector.isWildcard(), false);
+  expect(elementSelector.name, "div");
+}
+
+void testNamespace2() {
+  var cssErrors = [];
+  var input = "ns1|div div ns2|span .foobar {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence>simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 4);
+
+  var simpSelector0 = simpleSeqs[0].simpleSelector;
+  expect(simpSelector0 is NamespaceSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector0.namespace, "ns1");
+  ElementSelector elementSelector0 = simpSelector0.nameAsSimpleSelector;
+  expect(elementSelector0 is ElementSelector, true);
+  expect(elementSelector0.isWildcard(), false);
+  expect(elementSelector0.name, "div");
+
+  var simpSelector1 = simpleSeqs[1].simpleSelector;
+  expect(simpSelector1 is ElementSelector, true);
+  expect(simpleSeqs[1].isCombinatorDescendant(), true);
+  expect(simpSelector1.name, "div");
+
+  var simpSelector2 = simpleSeqs[2].simpleSelector;
+  expect(simpSelector2 is NamespaceSelector, true);
+  expect(simpleSeqs[2].isCombinatorDescendant(), true);
+  expect(simpSelector2.namespace, "ns2");
+  ElementSelector elementSelector2 = simpSelector2.nameAsSimpleSelector;
+  expect(elementSelector2 is ElementSelector, true);
+  expect(elementSelector2.isWildcard(), false);
+  expect(elementSelector2.name, "span");
+
+  var simpSelector3 = simpleSeqs[3].simpleSelector;
+  expect(simpSelector3 is ClassSelector, true);
+  expect(simpleSeqs[3].isCombinatorDescendant(), true);
+  expect(simpSelector3.name, "foobar");
+}
+
+void testSelectorGroups() {
+  var cssErrors = [];
+
+  var input =
+      "div, .foobar ,#elemId, .xyzzy .test, ns1|div div #elemId .foobar {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 5);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  var groupSelector0 = ruleset.selectorGroup.selectors[0];
+  expect(groupSelector0.simpleSelectorSequences.length, 1);
+  var selector0 = groupSelector0.simpleSelectorSequences[0];
+  var simpleSelector0 = selector0.simpleSelector;
+  expect(simpleSelector0 is ElementSelector, true);
+  expect(selector0.isCombinatorNone(), true);
+  expect(simpleSelector0.name, "div");
+
+  var groupSelector1 = ruleset.selectorGroup.selectors[1];
+  expect(groupSelector1.simpleSelectorSequences.length, 1);
+  var selector1 = groupSelector1.simpleSelectorSequences[0];
+  var simpleSelector1 = selector1.simpleSelector;
+  expect(simpleSelector1 is ClassSelector, true);
+  expect(selector1.isCombinatorNone(), true);
+  expect(simpleSelector1.name, "foobar");
+
+  var groupSelector2 = ruleset.selectorGroup.selectors[2];
+  expect(groupSelector2.simpleSelectorSequences.length, 1);
+  var selector2 = groupSelector2.simpleSelectorSequences[0];
+  var simpleSelector2 = selector2.simpleSelector;
+  expect(simpleSelector2 is IdSelector, true);
+  expect(selector2.isCombinatorNone(), true);
+  expect(simpleSelector2.name, "elemId");
+
+  var groupSelector3 = ruleset.selectorGroup.selectors[3];
+  expect(groupSelector3.simpleSelectorSequences.length, 2);
+
+  var selector30 = groupSelector3.simpleSelectorSequences[0];
+  var simpleSelector30 = selector30.simpleSelector;
+  expect(simpleSelector30 is ClassSelector, true);
+  expect(selector30.isCombinatorNone(), true);
+  expect(simpleSelector30.name, "xyzzy");
+
+  var selector31 = groupSelector3.simpleSelectorSequences[1];
+  var simpleSelector31 = selector31.simpleSelector;
+  expect(simpleSelector31 is ClassSelector, true);
+  expect(selector31.isCombinatorDescendant(), true);
+  expect(simpleSelector31.name, "test");
+
+  var groupSelector4 = ruleset.selectorGroup.selectors[4];
+  expect(groupSelector4.simpleSelectorSequences.length, 4);
+
+  var selector40 = groupSelector4.simpleSelectorSequences[0];
+  var simpleSelector40 = selector40.simpleSelector;
+  expect(simpleSelector40 is NamespaceSelector, true);
+  expect(selector40.isCombinatorNone(), true);
+  expect(simpleSelector40.namespace, "ns1");
+  ElementSelector elementSelector = simpleSelector40.nameAsSimpleSelector;
+  expect(elementSelector is ElementSelector, true);
+  expect(elementSelector.isWildcard(), false);
+  expect(elementSelector.name, "div");
+
+  var selector41 = groupSelector4.simpleSelectorSequences[1];
+  var simpleSelector41 = selector41.simpleSelector;
+  expect(simpleSelector41 is ElementSelector, true);
+  expect(selector41.isCombinatorDescendant(), true);
+  expect(simpleSelector41.name, "div");
+
+  var selector42 = groupSelector4.simpleSelectorSequences[2];
+  var simpleSelector42 = selector42.simpleSelector;
+  expect(simpleSelector42 is IdSelector, true);
+  expect(selector42.isCombinatorDescendant(), true);
+  expect(simpleSelector42.name, "elemId");
+
+  var selector43 = groupSelector4.simpleSelectorSequences[3];
+  var simpleSelector43 = selector43.simpleSelector;
+  expect(selector43.isCombinatorDescendant(), true);
+  expect(simpleSelector43.name, "foobar");
+}
+
+void testCombinator() {
+  var cssErrors = [];
+
+  var input = ".foobar > .bar + .no-story ~ myNs|div #elemId {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+    ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 5);
+
+  var selector0 = simpleSeqs[0];
+  var simpleSelector0 = selector0.simpleSelector;
+  expect(simpleSelector0 is ClassSelector, true);
+  expect(selector0.isCombinatorNone(), true);
+  expect(simpleSelector0.name, "foobar");
+
+  var selector1 = simpleSeqs[1];
+  var simpleSelector1 = selector1.simpleSelector;
+  expect(simpleSelector1 is ClassSelector, true);
+  expect(selector1.isCombinatorGreater(), true);
+  expect(simpleSelector1.name, "bar");
+
+  var selector2 = simpleSeqs[2];
+  var simpleSelector2 = selector2.simpleSelector;
+  expect(simpleSelector2 is ClassSelector, true);
+  expect(selector2.isCombinatorPlus(), true);
+  expect(simpleSelector2.name, "no-story");
+
+  var selector3 = simpleSeqs[3];
+  var simpleSelector3 = selector3.simpleSelector;
+  expect(simpleSelector3 is NamespaceSelector, true);
+  expect(selector3.isCombinatorTilde(), true);
+  expect(simpleSelector3.namespace, "myNs");
+  ElementSelector elementSelector = simpleSelector3.nameAsSimpleSelector;
+  expect(elementSelector is ElementSelector, true);
+  expect(elementSelector.isWildcard(), false);
+  expect(elementSelector.name, "div");
+
+  var selector4 = simpleSeqs[4];
+  var simpleSelector4 = selector4.simpleSelector;
+  expect(simpleSelector4 is IdSelector, true);
+  expect(selector4.isCombinatorDescendant(), true);
+  expect(simpleSelector4.name, "elemId");
+}
+
+void testWildcard() {
+  var cssErrors = [];
+
+  var input = "* {}";
+  var stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  RuleSet ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  List<SimpleSelectorSequence> simpleSeqs =
+      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 1);
+  var simpSelector = simpleSeqs[0].simpleSelector;
+  expect(simpSelector is ElementSelector, true);
+  expect(simpleSeqs[0].isCombinatorNone(), true);
+  expect(simpSelector.isWildcard(), true);
+  expect(simpSelector.name, "*");
+
+  cssErrors = [];
+  input = "*.foobar {}";
+  stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 2);
+
+  var selector0 = simpleSeqs[0];
+  var simpleSelector0 = selector0.simpleSelector;
+  expect(simpleSelector0 is ElementSelector, true);
+  expect(selector0.isCombinatorNone(), true);
+  expect(simpleSelector0.isWildcard(), true);
+  expect(simpleSelector0.name, "*");
+
+  var selector1 = simpleSeqs[1];
+  var simpleSelector1 = selector1.simpleSelector;
+  expect(simpleSelector1 is ClassSelector, true);
+  expect(selector1.isCombinatorNone(), true);
+  expect(simpleSelector1.name, "foobar");
+
+  cssErrors = [];
+  input = "myNs|*.foobar {}";
+  stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(stylesheet != null, true);
+  expect(stylesheet.topLevels.length, 1);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 2);
+
+  selector0 = simpleSeqs[0];
+  simpleSelector0 = selector0.simpleSelector;
+  expect(simpleSelector0 is NamespaceSelector, true);
+  expect(selector0.isCombinatorNone(), true);
+  expect(simpleSelector0.isNamespaceWildcard(), false);
+  ElementSelector elementSelector = simpleSelector0.nameAsSimpleSelector;
+  expect("myNs", simpleSelector0.namespace);
+  expect(elementSelector.isWildcard(), true);
+  expect("*", elementSelector.name);
+
+  selector1 = simpleSeqs[1];
+  simpleSelector1 = selector1.simpleSelector;
+  expect(simpleSelector1 is ClassSelector, true);
+  expect(selector1.isCombinatorNone(), true);
+  expect("foobar", simpleSelector1.name);
+
+  cssErrors = [];
+  input = "*|*.foobar {}";
+  stylesheet = parseCss(input, errs: cssErrors);
+
+  expect(cssErrors.isEmpty, true);
+  expect(stylesheet != null, true);
+
+  expect(stylesheet.topLevels[0] is RuleSet, true);
+  ruleset = stylesheet.topLevels[0];
+  expect(ruleset.selectorGroup.selectors.length, 1);
+  expect(ruleset.declarationGroup.declarations.length, 0);
+
+  simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+
+  expect(simpleSeqs.length, 2);
+
+  selector0 = simpleSeqs[0];
+  simpleSelector0 = selector0.simpleSelector;
+  expect(simpleSelector0 is NamespaceSelector, true);
+  expect(selector0.isCombinatorNone(), true);
+  expect(simpleSelector0.isNamespaceWildcard(), true);
+  expect("*", simpleSelector0.namespace);
+  elementSelector = simpleSelector0.nameAsSimpleSelector;
+  expect(elementSelector.isWildcard(), true);
+  expect("*", elementSelector.name);
+
+  selector1 = simpleSeqs[1];
+  simpleSelector1 = selector1.simpleSelector;
+  expect(simpleSelector1 is ClassSelector, true);
+  expect(selector1.isCombinatorNone(), true);
+  expect("foobar", simpleSelector1.name);
+}
+
+void testPseudo() {
+  // TODO(terry): Implement
+}
+
+void testAttribute() {
+  // TODO(terry): Implement
+}
+
+void testNegation() {
+  // TODO(terry): Implement
+}
+
+// TODO(terry): Move to emitter_test.dart when real emitter exist.
+void testEmitter() {
+  var cssErrors = [];
+  var input = '.foo { '
+      'color: red; left: 20px; top: 20px; width: 100px; height:200px'
+    '}'
+    '#div {'
+      'color : #00F578; border-color: #878787;'
+    '}';
+  var stylesheet = parseCss(input, errs: cssErrors);
+  expect(cssErrors.isEmpty, true);
+
+  expect(stylesheet.toString(), r'''
+
+.foo {
+  color: #ff0000;
+  left: 20px;
+  top: 20px;
+  width: 100px;
+  height: 200px;
+}
+
+#div {
+  color: #00F578;
+  border-color: #878787;
+}
+''');
+}
+
+main() {
+  useVmConfiguration();
+  useMockMessages();
+
+  test('Classes', testClass);
+  test('Classes 2', testClass2);
+  test('Ids', testId);
+  test('Elements', testElement);
+  test('Namespace', testNamespace);
+  test('Namespace 2', testNamespace2);
+  test('Selector Groups', testSelectorGroups);
+  test('Combinator', testCombinator);
+  test('Wildcards', testWildcard);
+  test('Pseudo', testPseudo);
+  test('Attributes', testAttribute);
+  test('Negation', testNegation);
+  test('Simple Emitter', testEmitter);
+}
