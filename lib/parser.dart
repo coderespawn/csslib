@@ -101,9 +101,7 @@ class SourceSpan implements Comparable {
   SourceSpan(this.file, this.start, this.end);
 
   /** Returns the source text corresponding to this [Span]. */
-  String get text {
-    return file.text.substring(start, end);
-  }
+  String get text => file.text.substring(start, end);
 
   String toMessageString(String filename, String message,
         {bool useColors: false}) {
@@ -111,21 +109,10 @@ class SourceSpan implements Comparable {
         useColors: useColors);
   }
 
-  int get line {
-    return file.getLine(start);
-  }
-
-  int get column {
-    return file.getColumn(line, start);
-  }
-
-  int get endLine {
-    return file.getLine(end);
-  }
-
-  int get endColumn {
-    return file.getColumn(endLine, end);
-  }
+  int get line => file.getLine(start);
+  int get column => file.getColumn(line, start);
+  int get endLine => file.getLine(end);
+  int get endColumn => file.getColumn(endLine, end);
 
   String get locationText {
     var line = file.getLine(start);

@@ -21,16 +21,11 @@ void testClass() {
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
 
-  // TODO(terry): When topLevels[0] is replaced with rulesets[0] then this can
-  //              be a var and not an explicit type.
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  // TODO(terry): When above TODO (topLevels replace with rulesets[0] then
-  //              selectorSeqs can be a var instead of explicit type.
-  List<SimpleSelectorSequence> selectorSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var selectorSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
   expect(selectorSeqs.length, 1);
   final simpSelector = selectorSeqs[0].simpleSelector;
   expect(simpSelector is ClassSelector, true);
@@ -47,13 +42,11 @@ void testClass2() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
-
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
   expect(simpleSeqs.length, 3);
 
   var simpSelector0 = simpleSeqs[0].simpleSelector;
@@ -82,12 +75,11 @@ void testId() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 1);
   var simpSelector = simpleSeqs[0].simpleSelector;
@@ -106,12 +98,11 @@ void testElement() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 1);
 
@@ -162,12 +153,11 @@ void testNamespace() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 1);
   var simpSelector = simpleSeqs[0].simpleSelector;
@@ -175,7 +165,7 @@ void testNamespace() {
   expect(simpleSeqs[0].isCombinatorNone(), true);
   expect(simpSelector.isNamespaceWildcard(), false);
   expect(simpSelector.namespace, "ns1");
-  ElementSelector elementSelector = simpSelector.nameAsSimpleSelector;
+  var elementSelector = simpSelector.nameAsSimpleSelector;
   expect(elementSelector is ElementSelector, true);
   expect(elementSelector.isWildcard(), false);
   expect(elementSelector.name, "div");
@@ -191,12 +181,11 @@ void testNamespace2() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence>simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 4);
 
@@ -204,7 +193,7 @@ void testNamespace2() {
   expect(simpSelector0 is NamespaceSelector, true);
   expect(simpleSeqs[0].isCombinatorNone(), true);
   expect(simpSelector0.namespace, "ns1");
-  ElementSelector elementSelector0 = simpSelector0.nameAsSimpleSelector;
+  var elementSelector0 = simpSelector0.nameAsSimpleSelector;
   expect(elementSelector0 is ElementSelector, true);
   expect(elementSelector0.isWildcard(), false);
   expect(elementSelector0.name, "div");
@@ -218,7 +207,7 @@ void testNamespace2() {
   expect(simpSelector2 is NamespaceSelector, true);
   expect(simpleSeqs[2].isCombinatorDescendant(), true);
   expect(simpSelector2.namespace, "ns2");
-  ElementSelector elementSelector2 = simpSelector2.nameAsSimpleSelector;
+  var elementSelector2 = simpSelector2.nameAsSimpleSelector;
   expect(elementSelector2 is ElementSelector, true);
   expect(elementSelector2.isWildcard(), false);
   expect(elementSelector2.name, "span");
@@ -241,7 +230,7 @@ void testSelectorGroups() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 5);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
@@ -292,7 +281,7 @@ void testSelectorGroups() {
   expect(simpleSelector40 is NamespaceSelector, true);
   expect(selector40.isCombinatorNone(), true);
   expect(simpleSelector40.namespace, "ns1");
-  ElementSelector elementSelector = simpleSelector40.nameAsSimpleSelector;
+  var elementSelector = simpleSelector40.nameAsSimpleSelector;
   expect(elementSelector is ElementSelector, true);
   expect(elementSelector.isWildcard(), false);
   expect(elementSelector.name, "div");
@@ -325,12 +314,11 @@ void testCombinator() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-    ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 5);
 
@@ -357,7 +345,7 @@ void testCombinator() {
   expect(simpleSelector3 is NamespaceSelector, true);
   expect(selector3.isCombinatorTilde(), true);
   expect(simpleSelector3.namespace, "myNs");
-  ElementSelector elementSelector = simpleSelector3.nameAsSimpleSelector;
+  var elementSelector = simpleSelector3.nameAsSimpleSelector;
   expect(elementSelector is ElementSelector, true);
   expect(elementSelector.isWildcard(), false);
   expect(elementSelector.name, "div");
@@ -379,12 +367,11 @@ void testWildcard() {
   expect(stylesheet.topLevels.length, 1);
 
   expect(stylesheet.topLevels[0] is RuleSet, true);
-  RuleSet ruleset = stylesheet.topLevels[0];
+  var ruleset = stylesheet.topLevels[0];
   expect(ruleset.selectorGroup.selectors.length, 1);
   expect(ruleset.declarationGroup.declarations.length, 0);
 
-  List<SimpleSelectorSequence> simpleSeqs =
-      ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
+  var simpleSeqs = ruleset.selectorGroup.selectors[0].simpleSelectorSequences;
 
   expect(simpleSeqs.length, 1);
   var simpSelector = simpleSeqs[0].simpleSelector;
@@ -443,7 +430,7 @@ void testWildcard() {
   expect(simpleSelector0 is NamespaceSelector, true);
   expect(selector0.isCombinatorNone(), true);
   expect(simpleSelector0.isNamespaceWildcard(), false);
-  ElementSelector elementSelector = simpleSelector0.nameAsSimpleSelector;
+  var elementSelector = simpleSelector0.nameAsSimpleSelector;
   expect("myNs", simpleSelector0.namespace);
   expect(elementSelector.isWildcard(), true);
   expect("*", elementSelector.name);

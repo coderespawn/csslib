@@ -1,13 +1,13 @@
 // Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 
-import 'package:csslib/parser.dart' as Css;
+import 'package:csslib/parser.dart' as css;
 
 main() {
   var cssErrors = [];
 
   // Parse a simple stylesheet.
-  var stylesheet = Css.parse(
+  var stylesheet = css.parse(
     '.foo { '
       'color: red; left: 20px; top: 20px; width: 100px; height:200px'
     '}'
@@ -26,7 +26,7 @@ main() {
 
   // Parse a stylesheet woth errors
   cssErrors = [];
-  var stylesheetError = Css.parse(
+  var stylesheetError = css.parse(
     '.foo #%^&*asdf{ '
       'color: red; left: 20px; top: 20px; width: 100px; height:200px'
     '}', errors: cssErrors);
@@ -42,7 +42,7 @@ main() {
 
   // Parse a CSS selector.
   cssErrors = [];
-  var selectorAst = Css.selector('#div .foo', errors: cssErrors);
+  var selectorAst = css.selector('#div .foo', errors: cssErrors);
   if (!cssErrors.isEmpty) {
     print("Got ${cssErrors.length} errors.\n");
     for (var error in cssErrors) {

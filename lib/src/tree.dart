@@ -286,12 +286,10 @@ class NotSelector extends SimpleSelector {
 }
 
 class Stylesheet extends Node {
-  // TODO(terry): Cleanup create explict top level e.g., List<RuleSet> rulesets,
-  //              etc.  This will allow us to get the proper type inference.
-  //              When done cleanup test/compiler_test.dart to remove types
-  //              as we drill into the top level.
-  /** Contains charset, ruleset, directives (media, page, etc.). */
-  List<Node> _topLevels;
+  /**
+   * Contains charset, ruleset, directives (media, page, etc.), and selectors.
+   */
+  var _topLevels;
 
   Stylesheet(this._topLevels, SourceSpan span) : super(span) {
     for (final node in _topLevels) {
@@ -304,7 +302,7 @@ class Stylesheet extends Node {
 
   visit(TreeVisitor visitor) => visitor.visitStylesheet(this);
 
-  List<Node> get topLevels => _topLevels;
+  get topLevels => _topLevels;
 
   String toString() {
     StringBuffer buff = new StringBuffer();

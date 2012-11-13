@@ -39,7 +39,7 @@ void testSimpleTerms() {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 
@@ -79,7 +79,7 @@ void testDeclarations() {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 
@@ -110,7 +110,7 @@ void testIdentifiers() {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 
@@ -144,7 +144,7 @@ void testComposites() {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 
@@ -186,7 +186,7 @@ void testNewerCss() {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 
@@ -247,7 +247,7 @@ div[href ^= "test"] {
 }
 ''';
 
-  List cssErrors = [];
+  var cssErrors = [];
   var stylesheet = parseCss(input, errs: cssErrors);
   expect(cssErrors.isEmpty, true);
 

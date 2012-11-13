@@ -1,7 +1,7 @@
 csslib in Pure Dart
 ===================
 
-This is a pure [Dart][dart] [css parser][cssparse]. Since it's 100%
+This is a pure [Dart][dart] [CSS parser][cssparse]. Since it's 100%
 Dart you can use it safely from a script or server side app.
 
 Installation
@@ -10,7 +10,7 @@ Installation
 Add this to your `pubspec.yaml` (or create it):
 ```yaml
 dependencies:
-  cslib: any
+  csslib: any
 ```
 Then run the [Pub Package Manager][pub] (comes with the Dart SDK):
 
@@ -48,12 +48,6 @@ out what the change was.
 
 If you want to avoid breakage, you can also put the version constraint in your
 `pubspec.yaml` in place of the word `any`.
-
-
-Implementation Status
----------------------
-
-TBD
 
 Running Tests
 -------------
