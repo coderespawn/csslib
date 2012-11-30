@@ -4,7 +4,6 @@
 
 library utils;
 
-import 'dart:coreimpl';
 import 'messages.dart';
 
 /**

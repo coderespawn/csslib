@@ -4,7 +4,6 @@
 
 library css;
 
-import 'dart:coreimpl';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as Math;

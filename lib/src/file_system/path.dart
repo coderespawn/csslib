@@ -240,7 +240,7 @@ class _Path implements Path {
       }
       return result;
     }
-    throw new NotImplementedException(
+    throw new UnimplementedError(
       "Unimplemented case of Path.relativeTo(base):\n"
       "  Arguments: $_path.relativeTo($base)");
   }

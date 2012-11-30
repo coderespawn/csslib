@@ -5,7 +5,6 @@
 library compiler;
 
 import 'dart:collection' show SplayTreeMap;
-import 'dart:coreimpl';
 
 import 'file_system.dart';
 import 'file_system/path.dart';
