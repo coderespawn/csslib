@@ -15,9 +15,9 @@ Running All Tests
 -----------------
 
 All enabled tests should be passing.  Set current directory:
-'''bash
+```bash
 cd csslib
-'''
+```
 
 To run all suite tests:
 ```bash
@@ -32,9 +32,9 @@ Running a set of tests
 ----------------------
 
 To run an particular set of tests
-'''bash
+```bash
 dart test/suite/selectors3/selectors3_test.dart
-'''
+```
 
 Tests Suite Infrastructure
 --------------------------
