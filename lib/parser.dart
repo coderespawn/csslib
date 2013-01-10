@@ -6,8 +6,9 @@ library parser;
 
 import 'dart:math' as Math;
 
+import 'package:web_ui/src/file_system/path.dart';
+
 import 'src/files.dart';
-import 'src/file_system/path.dart';
 import 'src/styleimpl/styleimpl.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
@@ -25,21 +26,26 @@ part 'src/tree.dart';
  * or [List<int>] of bytes and returns a [Stylesheet] AST.  The optional
  * [errors] list will contain each error/warning as a [Message].
  */
-Stylesheet parse(var input, {List errors}) {
+Stylesheet parse(var input, {List errors, List options}) {
   var source = _inputAsString(input);
+
+  // If input is Path we load the file.  filePath of null implies loaded from
+  // memory.
+  var filePath = (input is Path) ? new Path.fromNative(input) : null;
 
   if (errors == null) {
     errors = [];
   }
 
-  // TODO(terry): Allow options to be passed in too?
-  var opt = PreprocessorOptions.parse(['--no-colors', 'memory']);
+  if (options == null) {
+    options = ['--no-colors', 'memory'];
+  }
+  var opt = PreprocessorOptions.parse(options);
   messages = new Messages(options: opt, printHandler: (Object obj) {
     errors.add(obj);
   });
 
-  var p = new Parser(new SourceFile(new Path.fromNative(source),
-      source: source));
+  var p = new Parser(new SourceFile(filePath, source: source));
   return p.parse();
 }
 
@@ -71,7 +77,21 @@ String _inputAsString(var input) {
 
   if (input is String) {
     source = input;
-  } else if (source is List<int>) {
+  } else if (input is List<int>) {
+    // TODO(terry): The parse function needs an "encoding" argument and will
+    //              default to whatever encoding CSS defaults to.
+    //
+    // Here's some info about CSS encodings:
+    // http://www.w3.org/International/questions/qa-css-charset.en.php
+    //
+    // As JMesserly suggests it will probably need a "preparser" html5lib
+    // (encoding_parser.dart) that interprets the bytes as ASCII and scans for
+    // @charset. But for now an "encoding" argument would work.  Often the
+    // HTTP header will indicate the correct encoding.
+    //
+    // See encoding helpers at: package:html5lib/lib/src/char_encodings.dart
+    // These helpers can decode in different formats given an encoding name
+    // (mostly unicode, ascii, windows-1252 which is html5 default encoding).
     source = new String.fromCharCodes(input);
   } else {
     // TODO(terry): Support RandomAccessFile using console.
@@ -146,11 +166,10 @@ class Parser {
   Token _previousToken;
   Token _peekToken;
 
-  Parser(this.source, [int start = 0, fs = null, String basePath = null])
+  Parser(this.source, [int start = 0, fs, String basePath])
       : _fs = fs, _basePath = basePath {
     tokenizer = new Tokenizer(source, true, start);
     _peekToken = tokenizer.next();
-    _previousToken = null;
   }
 
   /** Main entry point for parsing an entire CSS file. */
@@ -163,6 +182,7 @@ class Parser {
       var directive = processDirective();
       if (directive != null) {
         productions.add(directive);
+        _maybeEat(TokenKind.SEMICOLON);
       } else {
         RuleSet ruleset = processRuleSet();
         if (ruleset != null) {
@@ -354,15 +374,42 @@ class Parser {
   //  media_list:   IDENT [',' IDENT]
   //  keyframes:    '@-webkit-keyframes ...' (see grammar below).
   //  font_face:    '@font-face' '{' declarations '}'
+  //  namespace:    '@namespace name url("xmlns")
   //
   processDirective() {
     int start = _peekToken.start;
 
-    if (_maybeEat(TokenKind.AT)) {
-      switch (_peek()) {
+    var tokId = _peek();
+    // Handle case for @ directive (where there's a whitespace between the @
+    // sign and the directive name.  Technically, it's not valid grammar but
+    // a number of CSS tests test for whitespace between @ and name.
+    if (tokId == TokenKind.AT) {
+      Token tok = _next();
+      tokId = _peek();
+      if (_peekIdentifier()) {
+        // Is it a directive?
+        var directive = _peekToken.text;
+        var directiveLen = directive.length;
+        tokId = TokenKind.matchDirectives(directive, 0, directiveLen);
+        if (tokId == -1) {
+          tokId = TokenKind.matchMarginDirectives(directive, 0, directiveLen);
+        }
+      } else {
+        tokId = -1;
+      }
+
+      if (tokId == -1 && messages.options.checked) {
+        _warning("Not valid @directive", _makeSpan(start));
+        return;
+      }
+    }
+
+    switch (tokId) {
       case TokenKind.DIRECTIVE_IMPORT:
         _next();
 
+        // @import "uri_string" or @import url("uri_string") are identical; only
+        // a url can follow an @import.
         String importStr;
         if (_peekIdentifier()) {
           var func = processFunction(identifier());
@@ -379,7 +426,9 @@ class Parser {
         if (importStr == null) {
           _error('missing import string', _peekToken.span);
         }
-        return new ImportDirective(importStr, medias, _makeSpan(start));
+
+        return new ImportDirective(importStr.trim(), medias, _makeSpan(start));
+
       case TokenKind.DIRECTIVE_MEDIA:
         _next();
 
@@ -396,20 +445,54 @@ class Parser {
           _error('expected { after media before ruleset', _peekToken.span);
         }
         return new MediaDirective(media, ruleset, _makeSpan(start));
+
       case TokenKind.DIRECTIVE_PAGE:
+        /*
+         * @page S* IDENT? pseudo_page?
+         *      S* '{' S*
+         *      [ declaration | margin ]?
+         *      [ ';' S* [ declaration | margin ]? ]* '}' S*
+         *
+         * pseudo_page :
+         *      ':' [ "left" | "right" | "first" ]
+         *
+         * margin :
+         *      margin_sym S* '{' declaration [ ';' S* declaration? ]* '}' S*
+         *
+         * margin_sym : @top-left-corner, @top-left, @bottom-left, etc.
+         *
+         * See http://www.w3.org/TR/css3-page/#CSS21
+         */
         _next();
+
+        // Page name
+        var name;
+        if (_peekIdentifier()) {
+          name = identifier();
+        }
 
         // Any pseudo page?
         var pseudoPage;
         if (_maybeEat(TokenKind.COLON)) {
           if (_peekIdentifier()) {
             pseudoPage = identifier();
+            // TODO(terry): Normalize pseudoPage to lowercase.
+            if (messages.options.checked &&
+                !(pseudoPage.name == 'left' ||
+                  pseudoPage.name == 'right' ||
+                  pseudoPage.name == 'first')) {
+              _warning("Pseudo page must be left, top or first",
+                  pseudoPage.span);
+              return;
+            }
           }
         }
-        String pageName = pseudoPage is Identifier ?
-            pseudoPage.name : pseudoPage;
-        return new PageDirective(pageName, processDeclarations(),
-            _makeSpan(start));
+
+        String pseudoName = pseudoPage is Identifier ? pseudoPage.name : '';
+        String ident = name is Identifier ? name.name : '';
+        return new PageDirective(ident, pseudoName,
+            processMarginsDeclarations(), _makeSpan(start));
+
       case TokenKind.DIRECTIVE_KEYFRAMES:
         /*  Key frames grammar:
          *
@@ -449,6 +532,7 @@ class Parser {
         } while (!_maybeEat(TokenKind.RBRACE));
 
         return kf;
+
       case TokenKind.DIRECTIVE_FONTFACE:
         _next();
 
@@ -457,6 +541,7 @@ class Parser {
         // TODO(terry): To Be Implemented
 
         return new FontFaceDirective(decls, _makeSpan(start));
+
       case TokenKind.DIRECTIVE_INCLUDE:
         _next();
         String filename = processQuotedString(false);
@@ -472,9 +557,8 @@ class Parser {
             // Yes, let's parse this file as well.
             String fullFN = '${basePath}${filename}';
             String contents = _fs.readAll(fullFN);
-// TODO(terry): Need to compute file based on original Path as baseDir... If this is still true.
-            Parser parser = new Parser(new SourceFile(new Path(fullFN), source: contents), 0,
-                _fs, basePath);
+            Parser parser = new Parser(new SourceFile(
+                new Path(fullFN), source: contents), 0, _fs, basePath);
             Stylesheet stylesheet = parser.parse();
             return new IncludeDirective(filename, stylesheet, _makeSpan(start));
           }
@@ -484,13 +568,14 @@ class Parser {
 
         print("WARNING: @include doesn't work for uitest");
         return new IncludeDirective(filename, null, _makeSpan(start));
+
       case TokenKind.DIRECTIVE_STYLET:
         /* Stylet grammar:
-        *
-        *  @stylet IDENT '{'
-        *    ruleset
-        *  '}'
-        */
+         *
+         *  @stylet IDENT '{'
+         *    ruleset
+         *  '}'
+         */
         _next();
 
         var name;
@@ -514,9 +599,44 @@ class Parser {
         _eat(TokenKind.RBRACE);
 
         return new StyletDirective(name, productions, _makeSpan(start));
-      default:
-        _error('unknown directive, found $_peekToken', _peekToken.span);
-      }
+
+      case TokenKind.DIRECTIVE_NAMESPACE:
+        /* Namespace grammar:
+         *
+         * @namespace S* [namespace_prefix S*]? [STRING|URI] S* ';' S*
+         * namespace_prefix : IDENT
+         *
+         */
+        _next();
+
+        var prefix;
+        if (_peekIdentifier()) {
+          prefix = identifier();
+        }
+
+        // The namespace URI can be either a quoted string url("uri_string")
+        // are identical.
+        String namespaceUri;
+        if (_peekIdentifier()) {
+          var func = processFunction(identifier());
+          if (func is UriTerm) {
+            namespaceUri = func.text;
+          }
+        } else {
+          if (prefix != null && prefix.name == 'url') {
+            var func = processFunction(prefix);
+            if (func is UriTerm) {
+              // @namespace url("");
+              namespaceUri = func.text;
+              prefix = null;
+            }
+          } else {
+            namespaceUri = processQuotedString(false);
+          }
+        }
+
+        return new NamespaceDirective(prefix != null ? prefix.name : '',
+            namespaceUri, _makeSpan(start));
     }
   }
 
@@ -572,6 +692,92 @@ class Parser {
     }
 
     return new DeclarationGroup(decls, _makeSpan(start));
+  }
+
+  List<DeclarationGroup> processMarginsDeclarations() {
+    List groups = [];
+
+    int start = _peekToken.start;
+
+    _eat(TokenKind.LBRACE);
+
+    List<Declaration> decls = [];
+    List dartStyles = [];             // List of latest styles exposed to Dart.
+
+    do {
+      switch (_peek()) {
+        case TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER:
+        case TokenKind.MARGIN_DIRECTIVE_TOPLEFT:
+        case TokenKind.MARGIN_DIRECTIVE_TOPCENTER:
+        case TokenKind.MARGIN_DIRECTIVE_TOPRIGHT:
+        case TokenKind.MARGIN_DIRECTIVE_TOPRIGHTCORNER:
+        case TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFTCORNER:
+        case TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFT:
+        case TokenKind.MARGIN_DIRECTIVE_BOTTOMCENTER:
+        case TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHT:
+        case TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHTCORNER:
+        case TokenKind.MARGIN_DIRECTIVE_LEFTTOP:
+        case TokenKind.MARGIN_DIRECTIVE_LEFTMIDDLE:
+        case TokenKind.MARGIN_DIRECTIVE_LEFTBOTTOM:
+        case TokenKind.MARGIN_DIRECTIVE_RIGHTTOP:
+        case TokenKind.MARGIN_DIRECTIVE_RIGHTMIDDLE:
+        case TokenKind.MARGIN_DIRECTIVE_RIGHTBOTTOM:
+          // Margin syms processed.
+          //   margin :
+          //      margin_sym S* '{' declaration [ ';' S* declaration? ]* '}' S*
+          //
+          //      margin_sym : @top-left-corner, @top-left, @bottom-left, etc.
+          var marginSym = _peek();
+
+          _next();
+
+          var declGroup = processDeclarations();
+          if (declGroup != null) {
+            groups.add(new MarginGroup(marginSym, declGroup.declarations,
+                _makeSpan(start)));
+          }
+          break;
+        default:
+          Declaration decl = processDeclaration(dartStyles);
+          if (decl != null) {
+            if (decl.hasDartStyle) {
+              var newDartStyle = decl.dartStyle;
+
+              // Replace or add latest Dart style.
+              bool replaced = false;
+              for (var i = 0; i < dartStyles.length; i++) {
+                var dartStyle = dartStyles[i];
+                if (dartStyle.isSame(newDartStyle)) {
+                  dartStyles[i] = newDartStyle;
+                  replaced = true;
+                  break;
+                }
+              }
+              if (!replaced) {
+                dartStyles.add(newDartStyle);
+              }
+            }
+            decls.add(decl);
+          }
+          _maybeEat(TokenKind.SEMICOLON);
+          break;
+      }
+    } while (!_maybeEat(TokenKind.RBRACE));
+
+    // Fixup declaration to only have dartStyle that are live for this set of
+    // declarations.
+    for (var decl in decls) {
+      if (decl.hasDartStyle && dartStyles.indexOf(decl.dartStyle) < 0) {
+        // Dart style not live, ignore these styles in this Declarations.
+        decl.dartStyle = null;
+      }
+    }
+
+    if (decls.length > 0) {
+      groups.add(new DeclarationGroup(decls, _makeSpan(start)));
+    }
+
+    return groups;
   }
 
   SelectorGroup processSelectorGroup() {
@@ -685,6 +891,7 @@ class Parser {
         if (TokenKind.isKindIdentifier(_peek())) {
           first = identifier();
         }
+        break;
     }
 
     if (_maybeEat(TokenKind.NAMESPACE)) {
@@ -701,6 +908,7 @@ class Parser {
         default:
           _error('expected element name or universal(*), but found $_peekToken',
               _peekToken.span);
+          break;
       }
 
       return new NamespaceSelector(first,
@@ -713,16 +921,50 @@ class Parser {
     }
   }
 
+  bool _anyWhiteSpaceBeforePeekToken(int kind) {
+    if (_previousToken != null && _peekToken != null &&
+        _previousToken.kind == kind) {
+      // If end of previous token isn't same as the start of peek token then
+      // there's something between these tokens probably whitespace.
+      return _previousToken.end != _peekToken.start;
+    }
+
+    return false;
+  }
+
   simpleSelectorTail() {
     // Check for HASH | class | attrib | pseudo | negation
     int start = _peekToken.start;
     switch (_peek()) {
       case TokenKind.HASH:
         _eat(TokenKind.HASH);
-        return new IdSelector(identifier(), _makeSpan(start));
+
+        bool hasWhiteSpace = false;
+        if (_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
+          _warning("Not a valid ID selector expected #id", _makeSpan(start));
+          hasWhiteSpace = true;
+        }
+        var id = identifier();
+        if (hasWhiteSpace) {
+          // Generate bad selector id (normalized).
+          id.name = " ${id.name}";
+        }
+        return new IdSelector(id, _makeSpan(start));
       case TokenKind.DOT:
         _eat(TokenKind.DOT);
-        return new ClassSelector(identifier(), _makeSpan(start));
+
+        bool hasWhiteSpace = false;
+        if (_anyWhiteSpaceBeforePeekToken(TokenKind.DOT)) {
+          _warning("Not a valid class selector expected .className",
+              _makeSpan(start));
+          hasWhiteSpace = true;
+        }
+        var id = identifier();
+        if (hasWhiteSpace) {
+          // Generate bad selector class (normalized).
+          id.name = " ${id.name}";
+        }
+        return new ClassSelector(id, _makeSpan(start));
       case TokenKind.COLON:
         // :pseudo-class ::pseudo-element
         // TODO(terry): '::' should be token.
@@ -783,7 +1025,7 @@ class Parser {
         break;
       }
 
-      String value;
+      var value;
       if (op != TokenKind.NO_MATCH) {
         // Operator hit so we require a value too.
         if (_peekIdentifier()) {
@@ -978,7 +1220,9 @@ class Parser {
          *   100 - 900
          *   inherit
          */
-        // TODO(jacobr): handle bolder, lighter, and inherit.
+        // TODO(terry): Only 'normal', 'bold', or values of 100-900 supoorted
+        //              need to handle bolder, lighter, and inherit.  See
+        //              https://github.com/dart-lang/csslib/issues/1
         var expr = exprs.expressions[0];
         if (expr is NumberTerm) {
           var fontExpr = new FontExpression(expr.span,
@@ -989,10 +1233,6 @@ class Parser {
           if (weight != null) {
             var fontExpr = new FontExpression(expr.span, weight: weight);
             return _mergeFontStyles(fontExpr, dartStyles);
-          } else {
-            throw new BadFontException(
-              "Dart UI Views do not support font-weight $expr."
-              "Try using 'normal', 'bold', or values of 100-900 instead.");
           }
         }
         break;
@@ -1002,18 +1242,22 @@ class Parser {
           var expr = exprs.expressions[0];
           if (expr is UnitTerm) {
             UnitTerm unitTerm = expr;
-            // TODO(terry): Need to handle other units.
-            assert(unitTerm.unit == TokenKind.UNIT_LENGTH_PX ||
-                   unitTerm.unit == TokenKind.UNIT_LENGTH_PT);
-            var fontExpr = new FontExpression(expr.span,
-                lineHeight: new LineHeight(expr.value, inPixels: true));
-            return _mergeFontStyles(fontExpr, dartStyles);
+            // TODO(terry): Need to handle other units and LiteralTerm normal
+            //              See https://github.com/dart-lang/csslib/issues/2.
+            if (unitTerm.unit == TokenKind.UNIT_LENGTH_PX ||
+                   unitTerm.unit == TokenKind.UNIT_LENGTH_PT) {
+              var fontExpr = new FontExpression(expr.span,
+                  lineHeight: new LineHeight(expr.value, inPixels: true));
+              return _mergeFontStyles(fontExpr, dartStyles);
+            } else if (messages.options.checked) {
+              _warning("Unexpected unit for line-height", expr.span);
+            }
           } else if (expr is NumberTerm) {
             var fontExpr = new FontExpression(expr.span,
                 lineHeight: new LineHeight(expr.value, inPixels: false));
             return _mergeFontStyles(fontExpr, dartStyles);
-          } else {
-            throw new BadFontException("Layout can't handle line height $expr");
+          } else if (messages.options.checked) {
+            _warning("Unexpected value for line-height", expr.span);
           }
         }
         break;
@@ -1119,10 +1363,10 @@ class Parser {
    * The values of the margins can be a unit or unitless or auto.
    */
   processFourNums(Expressions exprs) {
-    int top;
-    int right;
-    int bottom;
-    int left;
+    num top;
+    num right;
+    num bottom;
+    num left;
 
     int totalExprs = exprs.expressions.length;
     switch (totalExprs) {
@@ -1230,36 +1474,36 @@ class Parser {
   //
   processTerm() {
     int start = _peekToken.start;
-    Token t;             // token for term's value
-    var value;                // value of term (numeric values)
+    Token t;                          // token for term's value
+    var value;                        // value of term (numeric values)
 
     var unary = "";
-
     switch (_peek()) {
     case TokenKind.HASH:
       this._eat(TokenKind.HASH);
-      String hexText;
-      if (_peekKind(TokenKind.INTEGER)) {
-        String hexText1 = _peekToken.text;
-        _next();
-        if (_peekIdentifier()) {
-          hexText = '$hexText1${identifier().name}';
-        } else {
-          hexText = hexText1;
+      if (!_anyWhiteSpaceBeforePeekToken(TokenKind.HASH)) {
+        String hexText;
+        if (_peekKind(TokenKind.INTEGER)) {
+          String hexText1 = _peekToken.text;
+          _next();
+          if (_peekIdentifier()) {
+            hexText = '$hexText1${identifier().name}';
+          } else {
+            hexText = hexText1;
+          }
+        } else if (_peekIdentifier()) {
+          hexText = identifier().name;
         }
-      } else if (_peekIdentifier()) {
-        hexText = identifier().name;
-      } else {
-        _errorExpected("hex number");
+        if (hexText != null) {
+          return _parseHex(hexText, _makeSpan(start));
+        }
       }
 
-      try {
-        int hexValue = parseHex(hexText);
-        return new HexColorTerm(hexValue, hexText, _makeSpan(start));
-      } catch (hexNumberException) {
-        _error('Bad hex number', _makeSpan(start));
+      if (messages.options.checked) {
+        _warning("Expected hex number", _makeSpan(start));
       }
-      break;
+      // Construct the bad hex value with a #<space>number.
+      return _parseHex(" ${processTerm().text}", _makeSpan(start));
     case TokenKind.INTEGER:
       t = _next();
       value = Math.parseInt("${unary}${t.text}");
@@ -1317,21 +1561,13 @@ class Parser {
 
           // Yes, process the color as an RGB value.
           String rgbColor = TokenKind.decimalToHex(colorValue, 3);
-          try {
-            colorValue = parseHex(rgbColor);
-          } catch (hexNumberException) {
-            _error('Bad hex number', _makeSpan(start));
-          }
-          return new HexColorTerm(colorValue, rgbColor, _makeSpan(start));
+          return _parseHex(rgbColor, _makeSpan(start));
         } catch (error) {
           if (error is NoColorMatchException) {
-            // TODO(terry): Other named things to match with validator?
-
-            // TODO(terry): Disable call to _warning need one World class for
-            //              both CSS parser and other parser (e.g., template)
-            //              so all warnings, errors, options, etc. are driven
-            //              from the one World.
-//          _warning('Unknown property value ${error.name}', _makeSpan(start));
+            var errMsg = TokenKind.isPredefinedName(error.name) ?
+                "Improper use of property value ${error.name}" :
+                "Unknown property value ${error.name}";
+            _warning(errMsg, _makeSpan(start));
             return new LiteralTerm(nameValue, nameValue.name, _makeSpan(start));
           }
         }
@@ -1388,6 +1624,7 @@ class Parser {
       if (value != null) {
         term = new NumberTerm(value, t.text, _makeSpan(start));
       }
+      break;
     }
 
     return term;
@@ -1401,37 +1638,42 @@ class Parser {
     switch (_peek()) {
     case TokenKind.SINGLE_QUOTE:
       stopToken = TokenKind.SINGLE_QUOTE;
+      start = _peekToken.start + 1;   // Skip the quote might have whitespace.
       _next();    // Skip the SINGLE_QUOTE.
       break;
     case TokenKind.DOUBLE_QUOTE:
       stopToken = TokenKind.DOUBLE_QUOTE;
+      start = _peekToken.start + 1;   // Skip the quote might have whitespace.
       _next();    // Skip the DOUBLE_QUOTE.
       break;
     default:
       if (urlString) {
         if (_peek() == TokenKind.LPAREN) {
           _next();    // Skip the LPAREN.
+          start = _peekToken.start;
         }
         stopToken = TokenKind.RPAREN;
       } else {
         _error('unexpected string', _makeSpan(start));
       }
+      break;
     }
-
-    StringBuffer stringValue = new StringBuffer();
 
     // Gobble up everything until we hit our stop token.
     int runningStart = _peekToken.start;
     while (_peek() != stopToken && _peek() != TokenKind.END_OF_FILE) {
       var tok = _next();
-      stringValue.add(tok.text);
     }
+
+    // All characters between quotes is the string.
+    int end = _peekToken.end;
+    var stringValue = _peekToken.source.text.substring(start, end - 1);
 
     if (stopToken != TokenKind.RPAREN) {
       _next();    // Skip the SINGLE_QUOTE or DOUBLE_QUOTE;
     }
 
-    return stringValue.toString();
+    return stringValue;
   }
 
   //  Function grammar:
@@ -1478,7 +1720,10 @@ class Parser {
 
     if (!TokenKind.isIdentifier(tok.kind) &&
         !TokenKind.isKindIdentifier(tok.kind)) {
-      _error('expected identifier, but found $tok', tok.span);
+      if (messages.options.checked) {
+        _warning('expected identifier, but found $tok', tok.span);
+      }
+      return new Identifier("", _makeSpan(tok.start));
     }
 
     return new Identifier(tok.text, _makeSpan(tok.start));
@@ -1497,18 +1742,19 @@ class Parser {
     }
   }
 
-  static int parseHex(String hex) {
-    var result = 0;
+  HexColorTerm _parseHex(String hexText, SourceSpan start) {
+    int hexValue = 0;
 
-    for (int i = 0; i < hex.length; i++) {
-      var digit = _hexDigit(hex.charCodeAt(i));
+     for (int i = 0; i < hexText.length; i++) {
+      var digit = _hexDigit(hexText.charCodeAt(i));
       if (digit < 0) {
-        throw new HexNumberException();
+        _warning('Bad hex number', start);
+        return new HexColorTerm(new BAD_HEX_VALUE(), hexText, start);
       }
-      result = (result << 4) + digit;
+      hexValue = (hexValue << 4) + digit;
     }
 
-    return result;
+    return new HexColorTerm(hexValue, hexText, start);
   }
 }
 
@@ -1580,8 +1826,8 @@ class ExpressionsProcessor {
           // It's font-family now.
           family.add(expr.toString());
           moreFamilies = false;
-        } else {
-          throw new BadFontException('Only font-family can be a list');
+        } else if (messages.options.checked) {
+          messages.warning('Only font-family can be a list', _exprs.span);
         }
       } else if (expr is OperatorComma && family.length > 0) {
         moreFamilies = true;
@@ -1608,7 +1854,10 @@ class ExpressionsProcessor {
       if (fontFamily == null) {
         fontFamily = processFontFamily();
       }
-      //TODO(terry): font-weight, font-style, font-variant.
+      //TODO(terry): Handle font-weight, font-style, and font-variant. See
+      //               https://github.com/dart-lang/csslib/issues/3
+      //               https://github.com/dart-lang/csslib/issues/4
+      //               https://github.com/dart-lang/csslib/issues/5
     }
 
     return new FontExpression(_exprs.span,
@@ -1617,17 +1866,3 @@ class ExpressionsProcessor {
         family: fontFamily.font.family);
   }
 }
-
-// TODO(jacobr): including span information so the user knows the file & line
-// number where the error occurred.
-class BadFontException implements Exception {
-  const BadFontException(String this._s);
-  String toString() => "BadFontException: '$_s'";
-  final String _s;
-}
-
-/** Not a hex number. */
-class HexNumberException implements Exception {
-  const HexNumberException();
-}
-

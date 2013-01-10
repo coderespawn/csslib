@@ -4,6 +4,11 @@
 
 part of styleimpl;
 
+// TODO(terry): Prune down this file we do need some of the code in this file
+//              for darker, lighter, how to represent a Font, etc but alot of
+//              the complexity can be removed.
+//              See https://github.com/dart-lang/csslib/issues/7
+
 /**
  * Base for all style properties (e.g., Color, Font, Border, Margin, etc.)
  */
@@ -279,6 +284,7 @@ class Color implements _StyleProperty, ColorBase, Hashable {
         default:
           // Type not defined UnsupportedOperationException should have thrown.
           assert(true);
+          break;
       }
     }
   }

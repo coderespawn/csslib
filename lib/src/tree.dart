@@ -8,6 +8,12 @@ part of parser;
 // CSS specific types:
 /////////////////////////////////////////////////////////////////////////
 
+bool _prettyPrint = true;
+
+String get newLine => _prettyPrint ? '\n' : ' ';
+String get sp => _prettyPrint ? ' ' : '';
+bool get isTesting => !_prettyPrint;
+
 class Identifier extends Node {
   String name;
 
@@ -60,7 +66,7 @@ class SelectorGroup extends Node {
     int idx = 0;
     for (final selector in _selectors) {
       if (idx++ > 0) {
-        buff.add(', ');
+        buff.add(',$sp');
       }
       buff.add(selector.toString());
     }
@@ -112,22 +118,22 @@ class SimpleSelectorSequence extends Node {
 
   get simpleSelector => _selector;
 
-  bool isCombinatorNone() => _combinator == TokenKind.COMBINATOR_NONE;
-  bool isCombinatorPlus() => _combinator == TokenKind.COMBINATOR_PLUS;
-  bool isCombinatorGreater() => _combinator == TokenKind.COMBINATOR_GREATER;
-  bool isCombinatorTilde() => _combinator == TokenKind.COMBINATOR_TILDE;
-  bool isCombinatorDescendant() =>
+  bool get isCombinatorNone => _combinator == TokenKind.COMBINATOR_NONE;
+  bool get isCombinatorPlus => _combinator == TokenKind.COMBINATOR_PLUS;
+  bool get isCombinatorGreater => _combinator == TokenKind.COMBINATOR_GREATER;
+  bool get isCombinatorTilde => _combinator == TokenKind.COMBINATOR_TILDE;
+  bool get isCombinatorDescendant =>
       _combinator == TokenKind.COMBINATOR_DESCENDANT;
 
-  String _combinatorToString() =>
-      isCombinatorDescendant() ? ' ' :
-      isCombinatorPlus() ? '+' :
-      isCombinatorGreater() ? '>' :
-      isCombinatorTilde() ? '~' : '';
+  String get _combinatorToString =>
+      isCombinatorDescendant ? ' ' :
+      isCombinatorPlus ? ' + ' :
+      isCombinatorGreater ? ' > ' :
+      isCombinatorTilde ? ' ~ ' : '';
 
   visit(TreeVisitor visitor) => visitor.visitSimpleSelectorSequence(this);
 
-  String toString() => '${_combinatorToString()}${_selector}';
+  String toString() => '${_combinatorToString}${_selector}';
 }
 
 /* All other selectors (element, #id, .class, attribute, pseudo, negation,
@@ -139,9 +145,9 @@ class SimpleSelector extends Node {
   SimpleSelector(this._name, SourceSpan span) : super(span);
 
   // Name can be an Identifier or WildCard we'll return either the name or '*'.
-  String get name => isWildcard() ? '*' : _name.name;
+  String get name => isWildcard ? '*' : _name.name;
 
-  bool isWildcard() => _name is Wildcard;
+  bool get isWildcard => _name is Wildcard;
 
   visit(TreeVisitor visitor) => visitor.visitSimpleSelector(this);
 
@@ -172,9 +178,10 @@ class NamespaceSelector extends SimpleSelector {
   NamespaceSelector(this._namespace, var name, SourceSpan span) :
       super(name, span);
 
-  String get namespace => _namespace is Wildcard ? '*' : _namespace.name;
+  String get namespace => _namespace is Wildcard ? '*' :
+      _namespace == null ? '' : _namespace.name;
 
-  bool isNamespaceWildcard() => _namespace is Wildcard;
+  bool get isNamespaceWildcard => _namespace is Wildcard;
 
   SimpleSelector get nameAsSimpleSelector => _name;
 
@@ -205,6 +212,8 @@ class AttributeSelector extends SimpleSelector {
       return '\$=';
     case TokenKind.SUBSTRING_MATCH:
       return '*=';
+    case TokenKind.NO_MATCH:
+      return '';
     }
   }
 
@@ -227,16 +236,20 @@ class AttributeSelector extends SimpleSelector {
   }
 
   String valueToString() {
-    if (_value is Identifier) {
-      return _value.name;
+    if (_value != null) {
+      if (_value is Identifier) {
+        return _value.name;
+      } else {
+        return '"${_value}"';
+      }
     } else {
-      return '"${_value}"';
+      return '';
     }
   }
 
   visit(TreeVisitor visitor) => visitor.visitAttributeSelector(this);
 
-  String toString() => "[${name} ${matchOperator()} ${valueToString()}]";
+  String toString() => "[${name}${matchOperator()}${valueToString()}]";
 }
 
 // #id
@@ -319,6 +332,16 @@ class Stylesheet extends Node {
     this.visit(tp);
     return to.buf.toString();
   }
+
+  String toStringCompact() {
+    var oldPrettyPrint = _prettyPrint;
+
+    _prettyPrint = false;
+    var output = toString();
+    _prettyPrint = oldPrettyPrint;
+
+    return output.trim();
+  }
 }
 
 class TopLevelProduction extends Node {
@@ -341,7 +364,8 @@ class RuleSet extends TopLevelProduction {
 
   visit(TreeVisitor visitor) => visitor.visitRuleSet(this);
 
-  String toString() => "\n${_selectorGroup} {\n${_declarationGroup}}\n";
+  String toString() =>
+      "$newLine${_selectorGroup} {$newLine${_declarationGroup}}";
 }
 
 class Directive extends Node {
@@ -365,15 +389,27 @@ class ImportDirective extends Directive {
   visit(TreeVisitor visitor) => visitor.visitImportDirective(this);
 
   String toString() {
+    bool isStartingQuote(String ch) => ('\'"'.indexOf(ch) == 0);
+
     StringBuffer buff = new StringBuffer();
 
-    buff.add('@import url(${_import})');
+    if (isStartingQuote(_import)) {
+      buff.add(' @import "$_import"');
+    } else {
+      if (isTesting) {
+        // Emit exactly was we parsed.
+        buff.add(' @import url($_import)');
+      } else {
+        // url(...) isn't needed only a URI can follow an @import directive.
+        buff.add(' @import $_import');
+      }
+    }
 
     int idx = 0;
     for (final medium in _media) {
-      buff.add(idx++ == 0 ? ' $medium' : ',$medium');
+      buff.add(idx++ == 0 ? '$sp$medium' : ',$medium');
     }
-    buff.add('\n');
+    buff.add(';');
 
     return buff.toString();
   }
@@ -391,27 +427,30 @@ class MediaDirective extends Directive {
   String toString() {
     StringBuffer buff = new StringBuffer();
 
-    buff.add('@media');
+    buff.add(' @media');
     int idx = 0;
     for (var medium in _media) {
       buff.add(idx++ == 0 ? ' $medium' : ',$medium');
     }
-    buff.add(' {\n');
-    buff.add(_ruleset.toString());
-    buff.add('\n\}\n');
+    buff.add(' {${_ruleset.toString()}');
+    buff.add('$newLine\}');
 
     return buff.toString();
   }
 }
 
 class PageDirective extends Directive {
+  String _ident;
   String _pseudoPage;
-  DeclarationGroup _decls;
+  List<DeclarationGroup> _declsMargin;
 
-  PageDirective(this._pseudoPage, this._decls, SourceSpan span) :
-    super(span);
+  PageDirective(this._ident, this._pseudoPage, this._declsMargin,
+      SourceSpan span) : super(span);
 
   visit(TreeVisitor visitor) => visitor.visitPageDirective(this);
+
+  bool get hasIdent => _ident != null && _ident.length > 0;
+  bool get hasPseudoPage => _pseudoPage != null && _pseudoPage.length > 0;
 
   // @page : pseudoPage {
   //    decls
@@ -419,11 +458,19 @@ class PageDirective extends Directive {
   String toString() {
     StringBuffer buff = new StringBuffer();
 
-    buff.add('@page ');
-    if (_pseudoPage != null) {
-      buff.add(': ${_pseudoPage} ');
+    buff.add('$newLine@page');
+    if (hasIdent || hasPseudoPage) {
+      if (hasIdent) buff.add(' ');
+      buff.add(_ident);
+      buff.add(hasPseudoPage ? ':$_pseudoPage' : '');
     }
-    buff.add('{\n${_decls.toString()}\n}\n');
+    buff.add(' ');
+    int idx = 0;
+    for (var decl in _declsMargin) {
+      if (idx > 0) buff.add(newLine);
+      buff.add('{$newLine${decl.toString()}}');
+      idx++;
+    }
 
     return buff.toString();
   }
@@ -446,11 +493,11 @@ class KeyFrameDirective extends Directive {
 
   String toString() {
     StringBuffer buff = new StringBuffer();
-    buff.add('@-webkit-keyframes ${_name} {\n');
+    buff.add('$newLine@-webkit-keyframes ${_name}$sp{$newLine');
     for (final block in _blocks) {
       buff.add(block.toString());
     }
-    buff.add('}\n');
+    buff.add('}');
     return buff.toString();
   }
 }
@@ -466,9 +513,9 @@ class KeyFrameBlock extends Expression {
 
   String toString() {
     StringBuffer buff = new StringBuffer();
-    buff.add('  ${_blockSelectors.toString()} {\n');
+    buff.add('$sp$sp${_blockSelectors.toString()}$sp{$newLine');
     buff.add(_declarations.toString());
-    buff.add('  }\n');
+    buff.add('$sp$sp}$newLine');
     return buff.toString();
   }
 }
@@ -528,6 +575,43 @@ class StyletDirective extends Directive {
   String toString() => '/* @stylet export as ${_dartClassName} */\n';
 }
 
+class NamespaceDirective extends Directive {
+  /** Namespace prefix. */
+  String _prefix;
+
+  /** URI associated with this namespace. */
+  String _uri;
+
+  NamespaceDirective(this._prefix, this._uri, SourceSpan span) :
+      super(span);
+
+  visit(TreeVisitor visitor) => visitor.visitNamespaceDirective(this);
+
+  String get prefix => _prefix.length > 0 ? '$_prefix ' : '';
+
+  String toString() {
+    bool isStartingQuote(String ch) => ('\'"'.indexOf(ch) == 0);
+
+    StringBuffer buff = new StringBuffer();
+
+    if (isStartingQuote(_uri)) {
+      buff.add(' @namespace $prefix"$_uri"');
+    } else {
+      if (isTesting) {
+        // Emit exactly was we parsed.
+        buff.add(' @namespace ${prefix}url($_uri)');
+      } else {
+        // url(...) isn't needed only a URI can follow a:
+        //    @namespace prefix directive.
+        buff.add(' @namespace $prefix$_uri');
+      }
+    }
+    buff.add(';');
+
+    return buff.toString();
+  }
+}
+
 class Declaration extends Node {
   Identifier _property;
   Expression _expression;
@@ -549,7 +633,7 @@ class Declaration extends Node {
 
   bool get important => _important;
   set important(bool value) => _important = value;
-  String importantAsString() => _important ? ' !important' : '';
+  String importantAsString() => _important ? '$sp!important' : '';
 
   visit(TreeVisitor visitor) => visitor.visitDeclaration(this);
 
@@ -570,9 +654,27 @@ class DeclarationGroup extends Node {
     StringBuffer buff = new StringBuffer();
     int idx = 0;
     for (final declaration in _declarations) {
-      buff.add("  ${declaration.toString()};\n");
+      if (idx > 0) buff.add(newLine);
+      buff.add("$sp$sp${declaration.toString()};");
+      idx++;
     }
+    if (idx > 0) buff.add(newLine);
     return buff.toString();
+  }
+}
+
+class MarginGroup extends DeclarationGroup {
+  int margin_sym;       // TokenType for for @margin sym.
+
+  MarginGroup(this.margin_sym, List<Declaration> decls, SourceSpan span)
+      : super(decls, span);
+
+  visit(TreeVisitor visitor) => visitor.visitMarginGroup(this);
+
+  String toString() {
+    var margin_sym_name =
+        TokenKind.idToValue(TokenKind._MARGIN_DIRECTIVES, margin_sym);
+    return "@$margin_sym_name {$newLine${super.toString()}}$newLine";
   }
 }
 
@@ -581,7 +683,7 @@ class OperatorSlash extends Expression {
 
   visit(TreeVisitor visitor) => visitor.visitOperatorSlash(this);
 
-  String toString() => ' /';
+  String toString() => '/';
 }
 
 class OperatorComma extends Expression {
@@ -713,8 +815,11 @@ class UriTerm extends LiteralTerm {
 
   visit(TreeVisitor visitor) => visitor.visitUriTerm(this);
 
-  String toString() => 'url(${text})';
+  String toString() => 'url("${text}")';
 }
+
+/** Type to signal a bad hex value for HexColorTerm.value. */
+class BAD_HEX_VALUE { }
 
 class HexColorTerm extends LiteralTerm {
   HexColorTerm(var value, String t, SourceSpan span) :
@@ -722,7 +827,17 @@ class HexColorTerm extends LiteralTerm {
 
   visit(TreeVisitor visitor) => visitor.visitHexColorTerm(this);
 
-  String toString() => '#${text}';
+  String toString() {
+    var mappedName;
+    if (isTesting && !(value is BAD_HEX_VALUE)) {
+      mappedName = TokenKind.hexToColorName(value);
+    }
+    if (mappedName == null) {
+      mappedName = '#${text}';
+    }
+
+    return mappedName;
+  }
 }
 
 class FunctionTerm extends LiteralTerm {
@@ -762,7 +877,7 @@ class GroupTerm extends Expression {
     int idx = 0;
     for (final term in _terms) {
       if (idx++ > 0) {
-        buff.add(' ');
+        buff.add('$sp');
       }
       buff.add(term.toString());
     }
@@ -870,10 +985,8 @@ class FontExpression extends DartStyleExpression {
   FontExpression(SourceSpan span, {var size, List<String>family,
       int weight, String style, String variant, LineHeight lineHeight}) :
       super(DartStyleExpression.fontStyle, span) {
-    // TODO(terry): Only px/pt for now (doesn't even look at the unit).
-    assert(size == null || (size != null && size is LengthTerm &&
-        size._unit == TokenKind.UNIT_LENGTH_PX ||
-        size._unit == TokenKind.UNIT_LENGTH_PT));
+    // TODO(terry): Only px/pt for now need to handle all possible units to
+    //              support calc expressions on units.
     font = new Font(size : size is LengthTerm ? size.value : size,
         family: family, weight: weight, style: style, variant: variant,
         lineHeight: lineHeight);
@@ -961,7 +1074,7 @@ class MarginExpression extends BoxExpression {
 
   visit(TreeVisitor visitor) => visitor.visitMarginExpression(this);
 
-  String toString() => "margin: const BoxEdge$formattedBoxEdge";
+  String toString() => "margin:${sp}const BoxEdge$formattedBoxEdge";
 }
 
 class BorderExpression extends BoxExpression {
@@ -995,7 +1108,7 @@ class BorderExpression extends BoxExpression {
 
   visit(TreeVisitor visitor) => visitor.visitBorderExpression(this);
 
-  String toString() => "border: const BoxEdge$formattedBoxEdge";
+  String toString() => "border:${sp}const BoxEdge$formattedBoxEdge";
 }
 
 class HeightExpression extends DartStyleExpression {
@@ -1063,7 +1176,7 @@ class PaddingExpression extends BoxExpression {
 
   visit(TreeVisitor visitor) => visitor.visitPaddingExpression(this);
 
-  String toString() => "padding: const BoxEdge$formattedBoxEdge";
+  String toString() => "padding:${sp}const BoxEdge$formattedBoxEdge";
 }
 
 abstract class TreeVisitor {
@@ -1080,9 +1193,11 @@ abstract class TreeVisitor {
   void visitFontFaceDirective(FontFaceDirective node);
   void visitIncludeDirective(IncludeDirective node);
   void visitStyletDirective(StyletDirective node);
+  void visitNamespaceDirective(NamespaceDirective node);
 
   void visitRuleSet(RuleSet node);
   void visitDeclarationGroup(DeclarationGroup node);
+  void visitMarginGroup(DeclarationGroup node);
   void visitDeclaration(Declaration node);
   void visitSelectorGroup(SelectorGroup node);
   void visitSelector(Selector node);
@@ -1181,7 +1296,13 @@ class TreePrinter implements TreeVisitor {
     output.heading('PageDirective', node.span);
     output.depth++;
     output.writeValue('pseudo page', node._pseudoPage);
-    visitDeclarationGroup(node._decls);
+    for (var declGroup in node._declsMargin) {
+      if (declGroup is MarginGroup) {
+        visitMarginGroup(declGroup);
+      } else {
+        visitDeclarationGroup(declGroup);
+      }
+    }
     output.depth;
 }
 
@@ -1231,7 +1352,15 @@ class TreePrinter implements TreeVisitor {
     output.depth++;
     output.writeNodeList('rulesets', node._rulesets);
     output.depth--;
-}
+  }
+
+  void visitNamespaceDirective(NamespaceDirective node) {
+    output.heading('NamespaceDirective', node.span);
+    output.depth++;
+    output.writeValue('prefix', node._prefix);
+    output.writeValue('uri', node._uri);
+    output.depth--;
+  }
 
   void visitRuleSet(RuleSet node) {
     output.heading('Ruleset', node.span);
@@ -1244,6 +1373,14 @@ class TreePrinter implements TreeVisitor {
   void visitDeclarationGroup(DeclarationGroup node) {
     output.heading('DeclarationGroup', node.span);
     output.depth++;
+    output.writeNodeList('declarations', node._declarations);
+    output.depth--;
+  }
+
+  void visitMarginGroup(MarginGroup node) {
+    output.heading('MarginGroup', node.span);
+    output.depth++;
+    output.writeValue('@directive', node.margin_sym);
     output.writeNodeList('declarations', node._declarations);
     output.depth--;
   }
@@ -1278,15 +1415,15 @@ class TreePrinter implements TreeVisitor {
   void visitSimpleSelectorSequence(SimpleSelectorSequence node) {
     output.heading('SimpleSelectorSequence', node.span);
     output.depth++;
-    if (node.isCombinatorNone()) {
+    if (node.isCombinatorNone) {
       output.writeValue('combinator', "NONE");
-    } else if (node.isCombinatorDescendant()) {
+    } else if (node.isCombinatorDescendant) {
       output.writeValue('combinator', "descendant");
-    } else if (node.isCombinatorPlus()) {
+    } else if (node.isCombinatorPlus) {
       output.writeValue('combinator', "+");
-    } else if (node.isCombinatorGreater()) {
+    } else if (node.isCombinatorGreater) {
       output.writeValue('combinator', ">");
-    } else if (node.isCombinatorTilde()) {
+    } else if (node.isCombinatorTilde) {
       output.writeValue('combinator', "~");
     } else {
       output.writeValue('combinator', "ERROR UNKNOWN");

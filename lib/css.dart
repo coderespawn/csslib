@@ -8,10 +8,11 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as Math;
 
+import 'package:web_ui/src/file_system.dart';
+import 'package:web_ui/src/file_system/console.dart';
+import 'package:web_ui/src/file_system/path.dart' as fs;
+
 import 'src/compiler.dart';
-import 'src/file_system.dart';
-import 'src/file_system/console.dart';
-import 'src/file_system/path.dart' as fs;
 import 'src/generate.dart';
 import 'src/messages.dart';
 import 'src/options.dart';

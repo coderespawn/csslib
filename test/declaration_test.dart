@@ -11,7 +11,7 @@ import 'package:csslib/parser.dart';
 
 void testSimpleTerms() {
   final String input = r'''
-
+@ import url("test.css");
 .foo {
   background-color: #191919;
   width: 10PX;
@@ -22,10 +22,9 @@ void testSimpleTerms() {
   width: .6in;
   length: 1.2in;
   -web-stuff: -10Px;
-}
-''';
+}''';
   final String generated = r'''
-
+@import "test.css";
 .foo {
   background-color: #191919;
   width: 10px;
@@ -36,16 +35,15 @@ void testSimpleTerms() {
   width: .6in;
   length: 1.2in;
   -web-stuff: -10px;
-}
-''';
+}''';
 
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
-  expect(cssErrors.isEmpty, true);
+  var stylesheet = parseCss(input, errors: cssErrors);
+  expect(cssErrors.isEmpty, true, reason: cssErrors.toString());
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(stylesheet.toString().trim(), generated);
 }
 
 /**
@@ -63,24 +61,22 @@ void testDeclarations() {
   background-image: url('http://single_quote.html');
   color: rgba(10,20,255);  <!-- test CDO/CDC  -->
   color: #123aef;   /* hex # part integer and part identifier */
-}
-''';
+}''';
   final String generated = r'''
 
 .more {
   color: #ff0000;
   color: #aabbcc;
   color: #0ff;
-  background-image: url(http://test.jpeg);
-  background-image: url(http://double_quote.html);
-  background-image: url(http://single_quote.html);
+  background-image: url("http://test.jpeg");
+  background-image: url("http://double_quote.html");
+  background-image: url("http://single_quote.html");
   color: rgba(10, 20, 255);
   color: #123aef;
-}
-''';
+}''';
 
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
+  var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -103,15 +99,13 @@ void testIdentifiers() {
 #da {
   height: 100px;
 }
-
 #foo {
   width: 10px;
   color: #ff00cc;
-}
-''';
+}''';
 
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
+  var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -129,8 +123,7 @@ void testComposites() {
   0% {
     -webkit-transform: translate3d(0, 0, 0) scale(1.0);
   }
-}
-''';
+}''';
   final String generated = r'''
 
 .xyzzy {
@@ -141,11 +134,10 @@ void testComposites() {
   0% {
   -webkit-transform: translate3d(0, 0, 0) scale(1.0);
   }
-}
-''';
+}''';
 
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
+  var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -160,39 +152,41 @@ void testNewerCss() {
     width: 10px;
   }
 }
-@page : test {
-  width: 10px;
-}
 @page {
   height: 22px;
+  size: 3in 3in;
 }
-''';
+@page : left {
+  width: 10px;
+}
+@page bar : left { @top-left { margin: 8px; } }''';
 
   final String generated = r'''
 @media screen,print {
-
 .foobar_screen {
   width: 10px;
 }
-
-}
-@page : test {
-  width: 10px;
-
 }
 @page {
   height: 22px;
-
+  size: 3in 3in;
 }
-''';
+@page:left {
+  width: 10px;
+}
+@page bar:left {
+@top-left {
+  margin: 8px;
+}
+}''';
 
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
+  var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(stylesheet.toString().trim(), generated);
 }
 
 void testCssFile() {
@@ -222,38 +216,34 @@ div[href^='test'] {
 }
 ''';
 
-  final String generated = r'''
-@import url(simple.css)
-@import url(test.css) print
-@import url(test.css) screen,print
-
-div[href ^= "test"] {
-  height: 10px;
-}
-@-webkit-keyframes pulsate {
-  from {
-  -webkit-transform: translate3d(0, 0, 0) scale(1.0);
-  }
-  10% {
-  -webkit-transform: translate3d(0, 0, 0) scale(1.0);
-  }
-  30% {
-  -webkit-transform: translate3d(0, 2, 0) scale(1.0);
-  }
-}
-
-.foobar {
-  grid-columns: 10px ("content" 1fr 10px) [4];
-}
-''';
-
+  final String generated =
+      '@import simple.css; '
+      '@import test.css print; '
+      '@import test.css screen,print;\n'
+      'div[href^="test"] {\n'
+      '  height: 10px;\n'
+      '}\n'
+      '@-webkit-keyframes pulsate {\n'
+      '  from {\n'
+      '  -webkit-transform: translate3d(0, 0, 0) scale(1.0);\n'
+      '  }\n'
+      '  10% {\n'
+      '  -webkit-transform: translate3d(0, 0, 0) scale(1.0);\n'
+      '  }\n'
+      '  30% {\n'
+      '  -webkit-transform: translate3d(0, 2, 0) scale(1.0);\n'
+      '  }\n'
+      '}\n'
+      '.foobar {\n'
+      '  grid-columns: 10px ("content" 1fr 10px) [4];\n'
+      '}';
   var cssErrors = [];
-  var stylesheet = parseCss(input, errs: cssErrors);
+  var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(stylesheet.toString().trim(), generated);
 }
 
 main() {

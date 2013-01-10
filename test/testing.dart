@@ -5,11 +5,18 @@
 /** Common definitions used for setting up the test environment. */
 library testing;
 
-import 'package:csslib/parser.dart' as Css;
+import 'package:csslib/parser.dart';
 import 'package:csslib/src/messages.dart';
 
 useMockMessages() {
   messages = new Messages(printHandler: (message) {});
 }
 
-Css.Stylesheet parseCss(String css, {List errs}) => Css.parse(css, errors:errs);
+/**
+ * Spin-up CSS parser in checked mode to detect any problematic CSS.  Normally,
+ * CSS will allow any property/value pairs regardless of validity; all of our
+ * tests (by default) will ensure that the CSS is really valid.
+ */
+Stylesheet parseCss(String cssInput, {List errors, List opts}) =>
+  parse(cssInput, errors: errors, options: opts == null ?
+      ['--no-colors', '--checked', '--warnings_as_errors', 'memory'] : opts);

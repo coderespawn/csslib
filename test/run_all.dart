@@ -9,11 +9,11 @@
 library run_impl;
 
 import 'dart:io';
-import 'package:csslib/css.dart' as css;
 import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
 import 'compiler_test.dart' as compiler_test;
 import 'declaration_test.dart' as declaration_test;
+import 'error_test.dart' as error_test;
 import 'selector_test.dart' as selector_test;
 
 main() {
@@ -26,4 +26,5 @@ main() {
   if (pattern.hasMatch('compiler_test.dart')) compiler_test.main();
   if (pattern.hasMatch('declaration_test.dart')) declaration_test.main();
   if (pattern.hasMatch('selector_test.dart')) selector_test.main();
+  if (pattern.hasMatch('error_test.dart')) error_test.main();
 }

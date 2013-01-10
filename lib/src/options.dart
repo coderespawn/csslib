@@ -19,6 +19,9 @@ class PreprocessorOptions {
   /** True to show informational messages. The `--verbose` flag. */
   final bool verbose;
 
+  /** True to show warning messages for bad CSS.  The '--checked' flag. */
+  final bool checked;
+
   /** Remove any generated files. */
   final bool clean;
 
@@ -42,6 +45,7 @@ class PreprocessorOptions {
       throwOnWarnings = args['throw_on_warnings'],
       throwOnErrors = args['throw_on_errors'],
       verbose = args['verbose'],
+      checked = args['checked'],
       clean = args['clean'],
       useColors = args['colors'],
       baseDir = args['basedir'],
@@ -57,9 +61,11 @@ class PreprocessorOptions {
           ' (defaults to the same directory as the source file)')
       ..addOption('basedir', help: 'Base directory location to find all source '
           'files (defaults to the source file\'s directory)')
-      ..addFlag('verbose',  abbr: 'v', defaultsTo: false, negatable: false,
+      ..addFlag('verbose', abbr: 'v', defaultsTo: false, negatable: false,
           help: 'Display detail info')
-      ..addFlag('suppress_warnings', defaultsTo: true, negatable: false,
+      ..addFlag('checked', defaultsTo: false, negatable: false,
+          help: 'Validate CSS values invalid value display a warning message')
+      ..addFlag('suppress_warnings', defaultsTo: true,
           help: 'Warnings not displayed')
       ..addFlag('warnings_as_errors', defaultsTo: false,
           help: 'Warning handled as errors')

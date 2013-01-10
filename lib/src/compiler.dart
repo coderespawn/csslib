@@ -4,10 +4,8 @@
 
 library compiler;
 
-import 'dart:collection' show SplayTreeMap;
-
-import 'file_system.dart';
-import 'file_system/path.dart';
+import 'package:web_ui/src/file_system.dart';
+import 'package:web_ui/src/file_system/path.dart';
 import 'files.dart';
 import 'messages.dart';
 import 'options.dart';
@@ -15,8 +13,8 @@ import 'package:csslib/parser.dart';
 import 'utils.dart';
 
 /**
- * Parses a CSS file [contents] and returns a Stylesheet tree.
- * Note that [contents] will be a [String] if coming from a browser-based
+ * Parses a CSS file [sourceFile] and returns a Stylesheet tree.
+ * Note that [sourceFile] will be a [String] if coming from a browser-based
  * [FileSystem], or it will be a [List<int>] if running on the command line.
  */
 Stylesheet parseCSS(sourceFile) => new Parser(sourceFile).parse();
@@ -59,7 +57,8 @@ class Compiler {
 
   /** Compile the application starting from the given [mainFile]. */
   Future run() {
-    if (!_mainPath.filename.endsWith('.css') && !_mainPath.filename.endsWith('.scss')) {
+    if (!_mainPath.filename.endsWith('.css') &&
+        !_mainPath.filename.endsWith('.scss')) {
       messages.error("Please provide a CSS/Sass file as your entry point.",
           null);
       return new Future.immediate(null);

@@ -7,7 +7,8 @@ library messages;
 import 'package:logging/logging.dart' show Level;
 
 import 'package:csslib/parser.dart';
-import 'file_system/path.dart';
+
+import 'package:web_ui/src/file_system/path.dart';
 import 'options.dart';
 import 'utils.dart';
 

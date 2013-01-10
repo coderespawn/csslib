@@ -23,8 +23,6 @@ class Tokenizer extends TokenizerBase {
     int ch;
     ch = _nextChar();
     switch (ch) {
-      case 0:
-        return _finishToken(TokenKind.END_OF_FILE);
       case TokenChar.NEWLINE:
       case TokenChar.RETURN:
         _source.lineStarts.add(_startIndex);
@@ -36,6 +34,25 @@ class Tokenizer extends TokenizerBase {
       case TokenChar.END_OF_FILE:
         return _finishToken(TokenKind.END_OF_FILE);
       case TokenChar.AT:
+        int peekCh = _peekChar();
+        if (TokenizerHelpers.isIdentifierStart(peekCh)) {
+          _startIndex = _index;
+          ch = _nextChar();
+          Token ident = this.finishIdentifier(ch);
+
+          // Is it a directive?
+          int tokId = TokenKind.matchDirectives(_text, _startIndex,
+              _index - _startIndex);
+          if (tokId == -1) {
+            // No, is it a margin directive?
+            tokId = TokenKind.matchMarginDirectives(_text, _startIndex,
+                _index - _startIndex);
+          }
+
+          if (tokId != -1) {
+            return _finishToken(tokId);
+          }
+        }
         return _finishToken(TokenKind.AT);
       case TokenChar.DOT:
         int start = _startIndex;             // Start where the dot started.
@@ -66,7 +83,14 @@ class Tokenizer extends TokenizerBase {
       case TokenChar.LBRACK:
         return _finishToken(TokenKind.LBRACK);
       case TokenChar.RBRACK:
-        return _finishToken(TokenKind.RBRACK);
+        if (_maybeEatChar(TokenChar.RBRACK) &&
+            _maybeEatChar(TokenChar.GREATER)) {
+          // ]]>
+          return next();
+        } else {
+          return _finishToken(TokenKind.RBRACK);
+        }
+        break;
       case TokenChar.HASH:
         return _finishToken(TokenKind.HASH);
       case TokenChar.PLUS:
@@ -123,10 +147,20 @@ class Tokenizer extends TokenizerBase {
         }
         break;
       case  TokenChar.LESS:      // <!--
-        if (_maybeEatChar(TokenChar.BANG) &&
-            _maybeEatChar(TokenChar.MINUS) &&
-            _maybeEatChar(TokenChar.MINUS)) {
-          return finishMultiLineComment();
+        if (_maybeEatChar(TokenChar.BANG)) {
+          if (_maybeEatChar(TokenChar.MINUS) &&
+              _maybeEatChar(TokenChar.MINUS)) {
+            return finishMultiLineComment();
+          } else if (_maybeEatChar(TokenChar.LBRACK) &&
+              _maybeEatChar(TokenKind.CDATA_NAME[0]) &&
+              _maybeEatChar(TokenKind.CDATA_NAME[1]) &&
+              _maybeEatChar(TokenKind.CDATA_NAME[2]) &&
+              _maybeEatChar(TokenKind.CDATA_NAME[3]) &&
+              _maybeEatChar(TokenKind.CDATA_NAME[4]) &&
+              _maybeEatChar(TokenChar.LBRACK)) {
+            // <![CDATA[
+            return next();
+          }
         } else {
           return _finishToken(TokenKind.LESS);
         }
@@ -165,6 +199,7 @@ class Tokenizer extends TokenizerBase {
         } else {
           return _errorToken();
         }
+        break;
     }
   }
 
@@ -175,11 +210,6 @@ class Tokenizer extends TokenizerBase {
   int getIdentifierKind() {
     // Is the identifier a unit type?
     int tokId = TokenKind.matchUnits(_text, _startIndex, _index - _startIndex);
-    if (tokId == -1) {
-      // No, is it a directive?
-      tokId = TokenKind.matchDirectives(
-          _text, _startIndex, _index - _startIndex);
-    }
     if (tokId == -1) {
       tokId = (_text.substring(_startIndex, _index) == '!important') ?
           TokenKind.IMPORTANT : -1;

@@ -7,9 +7,11 @@ part of parser;
 // TODO(terry): Need to be consistent with tokens either they're ASCII tokens
 //              e.g., ASTERISK or they're CSS e.g., PSEUDO, COMBINATOR_*.
 class TokenKind {
+  static List CDATA_NAME = 'CDATA'.charCodes;
+
   // Common shared tokens used in TokenizerBase.
   static const int UNUSED = 0;                  // Unused place holder...
-  static const int END_OF_FILE = 1;             // TODO(terry): Must match base
+  static const int END_OF_FILE = 1;             // EOF
   static const int LPAREN = 2;                  // (
   static const int RPAREN = 3;                  // )
   static const int LBRACK = 4;                  // [
@@ -53,37 +55,38 @@ class TokenKind {
   static const int END_TOKENS = 35;             // Marker for last token in list
 
   /** [TokenKind] representing integer tokens. */
-  static const int INTEGER = 60;                // TODO(terry): must match base
+  static const int INTEGER = 60;
 
   /** [TokenKind] representing hex integer tokens. */
-  static const int HEX_INTEGER = 61;            // TODO(terry): must match base
+  static const int HEX_INTEGER = 61;
 
   /** [TokenKind] representing double tokens. */
-  static const int DOUBLE = 62;                 // TODO(terry): must match base
+  static const int DOUBLE = 62;
 
   /** [TokenKind] representing whitespace tokens. */
-  static const int WHITESPACE = 63;             // TODO(terry): must match base
+  static const int WHITESPACE = 63;
 
   /** [TokenKind] representing comment tokens. */
-  static const int COMMENT = 64;                // TODO(terry): must match base
+  static const int COMMENT = 64;
 
   /** [TokenKind] representing error tokens. */
-  static const int ERROR = 65;                  // TODO(terry): must match base
+  static const int ERROR = 65;
 
   /** [TokenKind] representing incomplete string tokens. */
-  static const int INCOMPLETE_STRING = 66;      // TODO(terry): must match base
+  static const int INCOMPLETE_STRING = 66;
 
   /** [TokenKind] representing incomplete comment tokens. */
-  static const int INCOMPLETE_COMMENT = 67;     // TODO(terry): must match base
+  static const int INCOMPLETE_COMMENT = 67;
 
   // Synthesized Tokens (no character associated with TOKEN).
-  // TODO(terry): Possible common names used by both Dart and CSS tokenizers.
   static const int STRING = 500;
   static const int STRING_PART = 501;
   static const int NUMBER = 502;
   static const int HEX_NUMBER = 503;
   static const int HTML_COMMENT = 504;          // <!--
   static const int IMPORTANT = 505;             // !important
+  static const int CDATA_START = 506;           // <![CDATA[
+  static const int CDATA_END = 507;             // ]]>
   static const int IDENTIFIER = 511;
 
   // Uniquely synthesized tokens for CSS.
@@ -132,6 +135,25 @@ class TokenKind {
   static const int DIRECTIVE_STYLET = 655;
   static const int DIRECTIVE_KEYFRAMES = 656;
   static const int DIRECTIVE_FONTFACE = 657;
+  static const int DIRECTIVE_NAMESPACE = 658;
+
+  // Directives inside of a @page (margin sym).
+  static const int MARGIN_DIRECTIVE_TOPLEFTCORNER = 670;
+  static const int MARGIN_DIRECTIVE_TOPLEFT = 671;
+  static const int MARGIN_DIRECTIVE_TOPCENTER = 672;
+  static const int MARGIN_DIRECTIVE_TOPRIGHT = 673;
+  static const int MARGIN_DIRECTIVE_TOPRIGHTCORNER = 674;
+  static const int MARGIN_DIRECTIVE_BOTTOMLEFTCORNER = 675;
+  static const int MARGIN_DIRECTIVE_BOTTOMLEFT = 676;
+  static const int MARGIN_DIRECTIVE_BOTTOMCENTER = 677;
+  static const int MARGIN_DIRECTIVE_BOTTOMRIGHT = 678;
+  static const int MARGIN_DIRECTIVE_BOTTOMRIGHTCORNER = 679;
+  static const int MARGIN_DIRECTIVE_LEFTTOP = 680;
+  static const int MARGIN_DIRECTIVE_LEFTMIDDLE = 681;
+  static const int MARGIN_DIRECTIVE_LEFTBOTTOM = 682;
+  static const int MARGIN_DIRECTIVE_RIGHTTOP = 683;
+  static const int MARGIN_DIRECTIVE_RIGHTMIDDLE = 684;
+  static const int MARGIN_DIRECTIVE_RIGHTBOTTOM = 685;
 
   // Simple selector type.
   static const int CLASS_NAME = 700;            // .class
@@ -150,6 +172,42 @@ class TokenKind {
     const {'type': TokenKind.DIRECTIVE_STYLET, 'value' : 'stylet'},
     const {'type': TokenKind.DIRECTIVE_KEYFRAMES, 'value' : '-webkit-keyframes'},
     const {'type': TokenKind.DIRECTIVE_FONTFACE, 'value' : 'font-face'},
+    const {'type': TokenKind.DIRECTIVE_NAMESPACE, 'value' : 'namespace'},
+  ];
+
+  static const List<Map<int, String>> _MARGIN_DIRECTIVES = const [
+    const {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER,
+        'value' : 'top-left-corner'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFT,
+        'value' : 'top-left'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_TOPCENTER,
+        'value' : 'top-center'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_TOPRIGHT,
+        'value' : 'top-right'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_TOPRIGHTCORNER,
+        'value' : 'top-right-corner'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFTCORNER,
+        'value' : 'bottom-left-corner'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMLEFT,
+        'value' : 'bottom-left'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMCENTER,
+        'value' : 'bottom-center'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHT,
+        'value' : 'bottom-right'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_BOTTOMRIGHTCORNER,
+        'value' : 'bottom-right-corner'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_LEFTTOP,
+        'value' : 'left-top'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_LEFTMIDDLE,
+        'value' : 'left-middle'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_LEFTBOTTOM,
+        'value' : 'right-bottom'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_RIGHTTOP,
+        'value' : 'right-top'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_RIGHTMIDDLE,
+        'value' : 'right-middle'},
+    const {'type': TokenKind.MARGIN_DIRECTIVE_RIGHTBOTTOM,
+        'value' : 'right-bottom'},
   ];
 
   static const List<Map> _UNITS = const [
@@ -372,13 +430,29 @@ class TokenKind {
         'info' : const {'params' : 1, 'expr' : false}},
   ];
 
-  /*
-   * Return the token that matches the unit ident found.
+  /**
+   * Check if name is a pre-defined CSS name.  Used by error handler to report
+   * if name is unknown or used improperly.
    */
+  static bool isPredefinedName(String name) {
+    var nameLen = name.length;
+    // TODO(terry): Add more pre-defined names (hidden, bolder, inherit, etc.).
+    if (matchUnits(name, 0, nameLen) == -1 ||
+        matchDirectives(name, 0, nameLen) == -1 ||
+        matchMarginDirectives(name, 0, nameLen) == -1 ||
+        matchColorName(name) == -1) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /** Return the token that matches the unit ident found. */
   static int matchList(var identList, String tokenField, String text,
                        int offset, int length) {
     for (final entry in identList) {
       String ident = entry['value'];
+
       if (length == ident.length) {
         int idx = offset;
         bool match = true;
@@ -404,23 +478,33 @@ class TokenKind {
     return -1;  // Not a unit token.
   }
 
-  /*
-   * Return the token that matches the unit ident found.
-   */
+  /** Return the token that matches the unit ident found. */
   static int matchUnits(String text, int offset, int length) {
     return matchList(_UNITS, 'unit', text, offset, length);
   }
 
-  /*
-   * Return the token that matches the directive ident found.
-   */
+  /** Return the token that matches the directive name found. */
   static int matchDirectives(String text, int offset, int length) {
     return matchList(_DIRECTIVES, 'type', text, offset, length);
   }
 
-  /*
-   * Return the unit token as its pretty name.
-   */
+  /** Return the token that matches the margin directive name found. */
+  static int matchMarginDirectives(String text, int offset, int length) {
+    return matchList(_MARGIN_DIRECTIVES, 'type', text, offset, length);
+  }
+
+  static String idToValue(var identList, int tokenId) {
+    for (var entry in identList) {
+      if (tokenId == entry['type']) {
+        return entry['value'];
+      }
+    }
+
+    return null;
+  }
+
+
+  /** Return the unit token as its pretty name. */
   static String unitToString(int unitTokenToFind) {
     if (unitTokenToFind == TokenKind.PERCENT) {
       return '%';
@@ -436,7 +520,7 @@ class TokenKind {
     return '<BAD UNIT>';  // Not a unit token.
   }
 
-  /*
+  /**
    * Match color name, case insensitive match and return the associated RGB
    * value as decimal number.
    */
@@ -468,6 +552,16 @@ class TokenKind {
 
     // No match.
     throw new NoColorMatchException(text);
+  }
+
+  static String hexToColorName(hexValue) {
+    for (final entry in _EXTENDED_COLOR_NAMES) {
+      if (entry['value'] == hexValue) {
+        return entry['name'];
+      }
+    }
+
+    return null;
   }
 
   static String decimalToHex(int number, [int minDigits = 1]) {
@@ -549,6 +643,7 @@ class TokenKind {
       case TokenKind.DIRECTIVE_STYLET:
       case TokenKind.DIRECTIVE_KEYFRAMES:
       case TokenKind.DIRECTIVE_FONTFACE:
+      case TokenKind.DIRECTIVE_NAMESPACE:
       case TokenKind.UNIT_EM:
       case TokenKind.UNIT_EX:
       case TokenKind.UNIT_LENGTH_PX:
@@ -610,6 +705,9 @@ class TokenChar {
   static const int TAB = 0x9; // "\t".charCodeAt(0)
   static const int NEWLINE = 0xa; // "\n".charCodeAt(0)
   static const int RETURN = 0xd; // "\r".charCodeAt(0)
+  static const int BACKSPACE = 0x8; // "/b".charCodeAt(0)
+  static const int FF = 0xc; // "/f".charCodeAt(0)
+  static const int VT = 0xb; // "/v".charCodeAt(0)
   static const int PERCENT = 0x25; // "%".charCodeAt(0)
   static const int SINGLE_QUOTE = 0x27; // "'".charCodeAt(0)
   static const int DOUBLE_QUOTE = 0x22; // '"'.charCodeAt(0)
@@ -621,4 +719,5 @@ class TokenChar {
   static const int LESS = 0x3c; // "<".charCodeAt(0)
   static const int BANG = 0x21; // "!".charCodeAt(0)
   static const int MINUS = 0x2d; // "-".charCodeAt(0)
+  static const int BACKSLASH = 0x5c; // "\".charCodeAt(0)
 }

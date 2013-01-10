@@ -17,6 +17,9 @@ abstract class TokenizerBase {
   int _index;
   int _startIndex;
 
+  const String _CDATA_START = '<![CDATA[';
+  const String _CDATA_END = ']]>';
+
   TokenizerBase(this._source, this._skipWhitespace, [index = 0])
       : this._index = index {
     _text = _source.text;
@@ -75,9 +78,11 @@ abstract class TokenizerBase {
     _index--;
     while (_index < _text.length) {
       final ch = _text.charCodeAt(_index++);
-      if (ch == 32/*' '*/ || ch == 9/*'\t'*/ || ch == 13/*'\r'*/) {
+      if (ch == TokenChar.SPACE ||
+          ch == TokenChar.TAB ||
+          ch == TokenChar.RETURN) {
         // do nothing
-      } else if (ch == 10/*'\n'*/) {
+      } else if (ch == TokenChar.NEWLINE) {
         if (!_skipWhitespace) {
           return _finishToken(TokenKind.WHITESPACE); // note the newline?
         }
@@ -97,7 +102,7 @@ abstract class TokenizerBase {
   Token finishSingleLineComment() {
     while (true) {
       int ch = _nextChar();
-      if (ch == 0 || ch == 10/*'\n'*/ || ch == 13/*'\r'*/) {
+      if (ch == 0 || ch == TokenChar.NEWLINE || ch == TokenChar.RETURN) {
         if (_skipWhitespace) {
           return next();
         } else {
@@ -113,12 +118,12 @@ abstract class TokenizerBase {
       int ch = _nextChar();
       if (ch == 0) {
         return _errorToken();
-      } else if (ch == 42/*'*'*/) {
-        if (_maybeEatChar(47/*'/'*/)) {
+      } else if (ch == TokenChar.ASTERISK) {
+        if (_maybeEatChar(TokenChar.SLASH)) {
           nesting--;
         }
-      } else if (ch == 47/*'/'*/) {
-        if (_maybeEatChar(42/*'*'*/)) {
+      } else if (ch == TokenChar.SLASH) {
+        if (_maybeEatChar(TokenChar.ASTERISK)) {
           nesting++;
         }
       }
@@ -187,7 +192,7 @@ abstract class TokenizerBase {
   Token finishNumber() {
     eatDigits();
 
-    if (_peekChar() == 46/*.*/) {
+    if (_peekChar() == TokenChar.DOT) {
       // Handle the case of 1.toString().
       _nextChar();
       if (TokenizerHelpers.isDigit(_peekChar())) {
@@ -204,8 +209,8 @@ abstract class TokenizerBase {
   Token finishNumberExtra(int kind) {
     if (_maybeEatChar(101/*e*/) || _maybeEatChar(69/*E*/)) {
       kind = TokenKind.DOUBLE;
-      _maybeEatChar(45/*-*/);
-      _maybeEatChar(43/*+*/);
+      _maybeEatChar(TokenKind.MINUS);
+      _maybeEatChar(TokenKind.PLUS);
       eatDigits();
     }
     if (_peekChar() != 0 && TokenizerHelpers.isIdentifierStart(_peekChar())) {
@@ -249,7 +254,7 @@ abstract class TokenizerBase {
           buf.add(quote);
         }
         buf.add(quote);
-      } else if (ch == 92/*\*/) {
+      } else if (ch == TokenChar.BACKSLASH) {
         var escapeVal = readEscapeSequence();
         if (escapeVal == -1) {
           return _errorToken("invalid hex escape sequence");
@@ -274,7 +279,7 @@ abstract class TokenizerBase {
     if (_maybeEatChar(quote)) {
       if (_maybeEatChar(quote)) {
         // skip an initial newline
-        _maybeEatChar(10/*'\n'*/);
+        _maybeEatChar(TokenChar.NEWLINE);
         return finishMultilineString(quote);
       } else {
         return _makeStringToken(new List<int>(), false);
@@ -320,7 +325,7 @@ abstract class TokenizerBase {
         return _makeStringToken(buf, false);
       } else if (ch == 0) {
         return _errorToken();
-      } else if (ch == 92/*\*/) {
+      } else if (ch == TokenChar.BACKSLASH) {
         var escapeVal = readEscapeSequence();
         if (escapeVal == -1) {
           return _errorToken("invalid hex escape sequence");
@@ -338,24 +343,24 @@ abstract class TokenizerBase {
     int hexValue;
     switch (ch) {
       case 110/*n*/:
-        return 0x0a/*'\n'*/;
+        return TokenChar.NEWLINE;
       case 114/*r*/:
-        return 0x0d/*'\r'*/;
+        return TokenChar.RETURN;
       case 102/*f*/:
-        return 0x0c/*'\f'*/;
+        return TokenChar.FF;
       case 98/*b*/:
-        return 0x08/*'\b'*/;
+        return TokenChar.BACKSPACE;
       case 116/*t*/:
-        return 0x09/*'\t'*/;
+        return TokenChar.TAB;
       case 118/*v*/:
-        return 0x0b/*'\v'*/;
+        return TokenChar.FF;
       case 120/*x*/:
         hexValue = readHex(2);
         break;
       case 117/*u*/:
-        if (_maybeEatChar(123/*{*/)) {
+        if (_maybeEatChar(TokenChar.LBRACE)) {
           hexValue = readHex();
-          if (!_maybeEatChar(125/*}*/)) {
+          if (!_maybeEatChar(TokenChar.RBRACE)) {
             return -1;
           }
         } else {
