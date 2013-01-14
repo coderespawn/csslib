@@ -49,12 +49,14 @@ import 'css3-page/css3_page_test.dart' as css3Page;
 import 'css3-text/css3_text_test.dart' as css3Text;
 import 'css3-writing-modes/css3_writing_modes_test.dart' as css3Modes;
 import 'selectors3/selectors3_test.dart' as selectors3;
-
+import 'suite_options.dart';
 
 main() {
-  var args = new Options().arguments;
+  options = SuiteOptions.parse(new Options().arguments);
+  if (options == null) return;
 
-  var pattern = new RegExp(args.length > 0 ? args[0] : '.');
+  // Match name passed or anything if nothing passed.
+  var pattern = new RegExp(options.name.length == 0 ? '.' : options.name);
 
   useVmConfiguration();
 

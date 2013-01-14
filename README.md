@@ -52,14 +52,30 @@ If you want to avoid breakage, you can also put the version constraint in your
 Running Tests
 -------------
 
-All tests should be passing.
+All tests (both canary and suite) should be passing.  Canary are quick test
+verifies that basic CSS is working.  The suite tests are a comprehensive set of
+~11,000 tests.
+
 ```bash
+export DART_SDK=path/to/dart/sdk
+
 # Make sure dependencies are installed
 pub install
 
-# Run command line tests
-#export DART_SDK=path/to/dart/sdk
+# Run command both canary and the suite tests
 test/run.sh
+```
+
+  Run only the canary test:
+
+```bash
+ test/run.sh canary
+```
+
+  Run only the suite tests:
+
+```bash
+ test/run.sh suite
 ```
 
 [dart]: http://www.dartlang.org/

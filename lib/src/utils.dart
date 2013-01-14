@@ -62,10 +62,10 @@ void _printMessage(String logMessage, int duration) {
   var buf = new StringBuffer();
   buf.add(logMessage);
   for (int i = logMessage.length; i < 60; i++) buf.add(' ');
-  buf.add(' -- ').add(GREEN_COLOR);
+  buf..add(' -- ')..add(GREEN_COLOR);
   if (duration < 10) buf.add(' ');
   if (duration < 100) buf.add(' ');
-  buf.add(duration).add(' ms').add(NO_COLOR);
+  buf..add(duration)..add(' ms')..add(NO_COLOR);
   print(buf.toString());
 }
 

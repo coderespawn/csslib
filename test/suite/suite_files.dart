@@ -10,7 +10,9 @@ import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
+import 'suite_options.dart';
 import '../testing.dart';
+
 
 /** Messages to display. */
 _Output out = new _Output();
@@ -74,7 +76,9 @@ class SuiteTest {
     for (var meta in document.queryAll('meta')) {
       if (meta.attributes.containsKey('content')) {
         if (meta.attributes['content'].contains('invalid')) {
-          out.display('.', "SKIP INVALID TESTS: ");
+          if (options.verbose || options.displayInvalidTests) {
+            out.display('.', "SKIP INVALID TESTS: ");
+          }
           return true;
         }
       }
@@ -213,18 +217,26 @@ class SuiteTest {
 
 class Suite {
   Directory suiteDir;
+  final String processDir;
 
   int uncheckedRun = 0;
   var testsRunning = [];
+  var validTestsSkipped = [];
 
-  Suite(String dir) {
+  Suite(this.processDir) {
     var currDir = new Directory.current();
-    suiteDir = new Directory('${currDir.path}/test/suite/$dir');
+    suiteDir = new Directory('${currDir.path}/${options.dir}/$processDir');
   }
 
   processTests(Map<String, Object> exceptionMatches) {
     if (suiteDir.existsSync()) {
-      suiteDir.list(recursive: true).onFile = (path) {
+      if (options.verbose) {
+        out.display("$processDir", "Processing Suite  :   ");
+      }
+      var lister = suiteDir.list(recursive: true);
+
+      // Process each file.
+      lister.onFile = (path) {
         Path filePath = new Path.fromNative(path);
         File file = new File.fromPath(filePath);
         if (file.existsSync()) {
@@ -235,7 +247,7 @@ class Suite {
               expectedOutput = exceptionMatches[filePath.filename];
               // If cssToMatch is equal to SKIP_TEST then skip this test.
               if (expectedOutput != null && expectedOutput == SKIP_TEST) {
-                out.display("${filePath.filename}, ", "SKIP VALID TEST:");
+                validTestsSkipped.add(filePath.filename);
                 return;
               }
             }
@@ -244,6 +256,25 @@ class Suite {
           }
         }
       };
+
+      // Signal when all files processed.
+      lister.onDone = (completed) {
+        if (options.verbose) {
+          var testSkipped = validTestsSkipped.length == 0 ? "" :
+              " SKIPPING [${validTestsSkipped.length}]";
+          out.displayLine(
+              "RUNNING [${testsRunning.length}]$testSkipped: $processDir",
+              true);
+        }
+        if (validTestsSkipped.length > 0 &&
+            (options.verbose || options.displaySkippedTests)) {
+          out.displayLine(
+              "Tests Skipped [${validTestsSkipped.length}]  "
+              "$processDir: ${validTestsSkipped.toString()}",
+              true);
+        }
+      };
+
       out.displayLine("", true);
     } else {
       // Failure the test directory doesn't exist.
@@ -288,8 +319,10 @@ class Suite {
       if (testsRunning.length == 0) {
         // TODO(terry): Keep track of unchecked CSS ultimately we'd like all
         //              tests to be run in checked mode.
-        out.displayLine("${suiteDir.path} : CSS w/o checked $uncheckedRun",
-            true);
+        if (options.verbose) {
+          out.displayLine("${suiteDir.path} : CSS w/o checked $uncheckedRun",
+              true);
+        }
       }
     }
   }

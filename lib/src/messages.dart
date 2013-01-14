@@ -42,7 +42,7 @@ class Message {
     var output = new StringBuffer();
     bool colors = useColors && _ERROR_COLORS.containsKey(level);
     if (colors) output.add(_ERROR_COLORS[level]);
-    output.add(level.name).add(' ');
+    output..add(level.name)..add(' ');
     if (colors) output.add(NO_COLOR);
 
     if (span == null) {
