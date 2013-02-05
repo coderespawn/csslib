@@ -2,15 +2,21 @@
 // for details. All rights reserved. Use of this source code is governed by a
 
 import 'package:csslib/parser.dart' as css;
+import 'package:csslib/visitor.dart';
 
 /**
  * Spin-up CSS parser in checked mode to detect any problematic CSS.  Normally,
  * CSS will allow any property/value pairs regardless of validity; all of our
  * tests (by default) will ensure that the CSS is really valid.
  */
-css.Stylesheet parseCss(String cssInput, {List errors, List opts}) =>
+StyleSheet parseCss(String cssInput, {List errors, List opts}) =>
     css.parse(cssInput, errors: errors, options: opts == null ?
         ['--no-colors', '--checked', '--warnings_as_errors', 'memory'] : opts);
+
+// Pretty printer for CSS.
+var emitCss = new CssPrinter();
+String prettyPrint(StyleSheet ss) =>
+    (emitCss..visitTree(ss, pretty: true)).toString();
 
 main() {
   var cssErrors = [];
@@ -34,7 +40,7 @@ main() {
       print(error);
     }
   } else {
-    print('${stylesheet.toString()}\n');
+    print(prettyPrint(stylesheet));
   }
 
   // Parse a stylesheet with errors
@@ -81,7 +87,7 @@ main() {
       print(error);
     }
   } else {
-    print(selectorAst.toString());
+    print(prettyPrint(selectorAst));
   }
 
 }

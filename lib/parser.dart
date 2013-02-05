@@ -4,29 +4,28 @@
 
 library parser;
 
-import 'dart:math' as Math;
+import 'dart:math' as math;
 
 import 'package:web_ui/src/file_system/path.dart';
+import 'package:web_ui/src/utils.dart';
 
+import "visitor.dart";
 import 'src/files.dart';
-import 'src/styleimpl/styleimpl.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
-import 'src/utils.dart';
 
+part 'src/property.dart';
 part 'src/token.dart';
 part 'src/tokenizer_base.dart';
 part 'src/tokenizer.dart';
 part 'src/tokenkind.dart';
-part 'src/tree_base.dart';
-part 'src/tree.dart';
 
 /**
  * Parse the [input] CSS stylesheet into a tree. The [input] can be a [String],
- * or [List<int>] of bytes and returns a [Stylesheet] AST.  The optional
+ * or [List<int>] of bytes and returns a [StyleSheet] AST.  The optional
  * [errors] list will contain each error/warning as a [Message].
  */
-Stylesheet parse(var input, {List errors, List options}) {
+StyleSheet parse(var input, {List errors, List options}) {
   var source = _inputAsString(input);
 
   // If input is Path we load the file.  filePath of null implies loaded from
@@ -51,10 +50,10 @@ Stylesheet parse(var input, {List errors, List options}) {
 
 /**
  * Parse the [input] CSS selector into a tree. The [input] can be a [String],
- * or [List<int>] of bytes and returns a [Stylesheet] AST.  The optional
+ * or [List<int>] of bytes and returns a [StyleSheet] AST.  The optional
  * [errors] list will contain each error/warning as a [Message].
  */
-Stylesheet selector(var input, {List errors}) {
+StyleSheet selector(var input, {List errors}) {
   var source = _inputAsString(input);
 
   if (errors == null) {
@@ -105,7 +104,7 @@ String _inputAsString(var input) {
 
 /**
  * A range of characters in a [SourceFile].  Used to represent the source
- * positions of [Token]s and [Node]s for error reporting or other tooling
+ * positions of [Token]s and [TreeNode]s for error reporting or other tooling
  * work.
  */
 class SourceSpan implements Comparable {
@@ -173,8 +172,8 @@ class Parser {
   }
 
   /** Main entry point for parsing an entire CSS file. */
-  Stylesheet parse() {
-    List<Node> productions = [];
+  StyleSheet parse() {
+    List<TreeNode> productions = [];
 
     int start = _peekToken.start;
     while (!_maybeEat(TokenKind.END_OF_FILE) && !_peekKind(TokenKind.RBRACE)) {
@@ -193,12 +192,12 @@ class Parser {
       }
     }
 
-    return new Stylesheet(productions, _makeSpan(start));
+    return new StyleSheet(productions, _makeSpan(start));
   }
 
   /** Main entry point for parsing a simple selector sequence. */
-  Stylesheet parseSelector() {
-    List<Node> productions = [];
+  StyleSheet parseSelector() {
+    List<TreeNode> productions = [];
 
     int start = _peekToken.start;
     while (!_maybeEat(TokenKind.END_OF_FILE) && !_peekKind(TokenKind.RBRACE)) {
@@ -208,7 +207,7 @@ class Parser {
       }
     }
 
-    return new Stylesheet.selector(productions, _makeSpan(start));
+    return new StyleSheet.selector(productions, _makeSpan(start));
   }
 
   /** Generate an error if [source] has not been completely consumed. */
@@ -344,8 +343,8 @@ class Parser {
   // Productions
   ///////////////////////////////////////////////////////////////////
 
-  processMedia([bool oneRequired = false]) {
-    List<String> media = [];
+  List<Identifier> processMedia([bool oneRequired = false]) {
+    var media = [];
 
     while (_peekIdentifier()) {
       // We have some media types.
@@ -421,7 +420,7 @@ class Parser {
         }
 
         // Any medias?
-        List<String> medias = processMedia();
+        var medias = processMedia();
 
         if (importStr == null) {
           _error('missing import string', _peekToken.span);
@@ -433,7 +432,7 @@ class Parser {
         _next();
 
         // Any medias?
-        List<String> media = processMedia(true);
+        var media = processMedia(true);
         RuleSet ruleset;
 
         if (_maybeEat(TokenKind.LBRACE)) {
@@ -559,7 +558,7 @@ class Parser {
             String contents = _fs.readAll(fullFN);
             Parser parser = new Parser(new SourceFile(
                 new Path(fullFN), source: contents), 0, _fs, basePath);
-            Stylesheet stylesheet = parser.parse();
+            StyleSheet stylesheet = parser.parse();
             return new IncludeDirective(filename, stylesheet, _makeSpan(start));
           }
 
@@ -585,7 +584,7 @@ class Parser {
 
         _eat(TokenKind.LBRACE);
 
-        List<Node> productions = [];
+        List<TreeNode> productions = [];
 
         start = _peekToken.start;
         while (!_maybeEat(TokenKind.END_OF_FILE)) {
@@ -1506,11 +1505,11 @@ class Parser {
       return _parseHex(" ${processTerm().text}", _makeSpan(start));
     case TokenKind.INTEGER:
       t = _next();
-      value = Math.parseInt("${unary}${t.text}");
+      value = int.parse("${unary}${t.text}");
       break;
     case TokenKind.DOUBLE:
       t = _next();
-      value = Math.parseDouble("${unary}${t.text}");
+      value = double.parse("${unary}${t.text}");
       break;
     case TokenKind.SINGLE_QUOTE:
     case TokenKind.DOUBLE_QUOTE:

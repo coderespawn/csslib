@@ -4,20 +4,23 @@
 
 library compiler;
 
+import 'dart:async';
+
 import 'package:web_ui/src/file_system.dart';
 import 'package:web_ui/src/file_system/path.dart';
+import 'package:web_ui/src/utils.dart';
 import 'files.dart';
 import 'messages.dart';
 import 'options.dart';
 import 'package:csslib/parser.dart';
-import 'utils.dart';
+import 'package:csslib/visitor.dart';
 
 /**
  * Parses a CSS file [sourceFile] and returns a Stylesheet tree.
  * Note that [sourceFile] will be a [String] if coming from a browser-based
  * [FileSystem], or it will be a [List<int>] if running on the command line.
  */
-Stylesheet parseCSS(sourceFile) => new Parser(sourceFile).parse();
+StyleSheet parseCSS(sourceFile) => new Parser(sourceFile).parse();
 
 /** Main entry point for tooling of CSS parser. */
 class Compiler {
@@ -63,7 +66,7 @@ class Compiler {
           null);
       return new Future.immediate(null);
     }
-    return _parseAndDiscover(_mainPath).transform((_) {
+    return _parseAndDiscover(_mainPath).then((_) {
       _analyze();
       _emit();
       return null;
@@ -83,20 +86,20 @@ class Compiler {
       files.add(file);
     }
 
-    tasks.add(_parseCSSFile(inputFile).transform(processCSSFile));
+    tasks.add(_parseCSSFile(inputFile).then(processCSSFile));
     return tasks.future;
   }
 
   /** Asynchronously parse [path] as an .html file. */
   Future<SourceFile> _parseCSSFile(Path path) {
     return (filesystem.readTextOrBytes(path)
-        ..handleException((e) => _readError(e, path)))
-        .transform((source) {
+        .then((source) {
           var file = new SourceFile(path);
           file.text = new String.fromCharCodes(source);
           file.tree = _time('Parsed', path, () => parseCSS(file));
           return file;
-        });
+        })
+        .catchError((e) => _readError(e, path)));
   }
 
   bool _readError(error, Path path) {

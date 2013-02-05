@@ -7,7 +7,7 @@ library generate;
 import 'dart:collection';
 
 import 'package:csslib/parser.dart';
-import 'package:csslib/src/styleimpl/styleimpl.dart';
+import 'package:csslib/visitor.dart';
 
 /**
  * Each CSS selector has an entry in the computeClassSelectors map.  The entry
@@ -100,7 +100,7 @@ class Generate {
     return dartName.toString();
   }
 
-  static String dartClass(Stylesheet stylesheet, String filename,
+  static String dartClass(StyleSheet stylesheet, String filename,
                           String libName) {
     var knownClasses = new SplayTreeMap<String, CssData>();
 

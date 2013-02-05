@@ -2,54 +2,39 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of parser;
+part of visitor;
 
 /**
  * The base type for all nodes in a CSS abstract syntax tree.
  */
-abstract class Node {
-  /** The source code this [Node] represents. */
+abstract class TreeNode {
+  /** The source code this [TreeNode] represents. */
   SourceSpan span;
 
-  Node(this.span) {}
+  TreeNode(this.span) {}
 
   /** Classic double-dispatch visitor for implementing passes. */
-  visit(TreeVisitor visitor);
+  visit(VisitorBase visitor);
 
   /** A multiline string showing the node and its children. */
   String toDebugString() {
     var to = new TreeOutput();
-    var tp = new TreePrinter(to);
+    var tp = new _TreePrinter(to);
     this.visit(tp);
     return to.buf.toString();
   }
 }
 
 /** The base type for expressions. */
-abstract class Expression extends Node {
+abstract class Expression extends TreeNode {
   Expression(SourceSpan span): super(span);
-}
-
-/** The base type for a reference to a [Type]. */
-abstract class TypeReference extends Node {
-  TypeReference(SourceSpan span): super(span);
 }
 
 /** Simple class to provide a textual dump of trees for debugging. */
 class TreeOutput {
-  int depth;
-  StringBuffer buf;
-
+  int depth = 0;
+  final StringBuffer buf = new StringBuffer();
   var printer;
-
-  static void dump(Node node) {
-    var o = new TreeOutput();
-    node.visit(new TreePrinter(o));
-    print(o.buf);
-  }
-
-  TreeOutput(): this.depth = 0, this.buf = new StringBuffer() {
-  }
 
   void write(String s) {
     for (int i=0; i < depth; i++) {
@@ -75,7 +60,7 @@ class TreeOutput {
     else return value.toString();
   }
 
-  void writeNode(String label, Node node) {
+  void writeNode(String label, TreeNode node) {
     write('${label}: ');
     depth += 1;
     if (node != null) node.visit(printer);
@@ -117,4 +102,6 @@ class TreeOutput {
       writeln(']');
     }
   }
+
+  String toString() => buf.toString();
 }

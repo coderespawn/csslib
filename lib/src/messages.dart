@@ -9,8 +9,8 @@ import 'package:logging/logging.dart' show Level;
 import 'package:csslib/parser.dart';
 
 import 'package:web_ui/src/file_system/path.dart';
+import 'package:web_ui/src/utils.dart';
 import 'options.dart';
-import 'utils.dart';
 
 // TODO(terry): Remove the global messages, use some object that tracks
 //              compilation state.

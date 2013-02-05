@@ -8,6 +8,18 @@ import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
+
+/** CSS emitter. */
+var emitCss = new CssPrinter();
+
+/** Pretty printer for CSS. */
+String prettyPrint(StyleSheet ss) =>
+    (emitCss..visitTree(ss, pretty: true)).toString();
+
+/** Compact (no pretty printing) for suite testing. */
+String compactOuptut(StyleSheet ss) =>
+    (emitCss..visitTree(ss)).toString();
 
 void testSimpleTerms() {
   final String input = r'''
@@ -43,7 +55,7 @@ void testSimpleTerms() {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString().trim(), generated);
+  expect(prettyPrint(stylesheet), generated);
 }
 
 /**
@@ -63,7 +75,6 @@ void testDeclarations() {
   color: #123aef;   /* hex # part integer and part identifier */
 }''';
   final String generated = r'''
-
 .more {
   color: #ff0000;
   color: #aabbcc;
@@ -81,7 +92,7 @@ void testDeclarations() {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(prettyPrint(stylesheet), generated);
 }
 
 void testIdentifiers() {
@@ -95,7 +106,6 @@ void testIdentifiers() {
 }
 ''';
   final String generated = r'''
-
 #da {
   height: 100px;
 }
@@ -110,7 +120,7 @@ void testIdentifiers() {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(prettyPrint(stylesheet), generated);
 }
 
 void testComposites() {
@@ -125,7 +135,6 @@ void testComposites() {
   }
 }''';
   final String generated = r'''
-
 .xyzzy {
   border: 10px 80px 90px 100px;
   width: 99%;
@@ -142,7 +151,7 @@ void testComposites() {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString(), generated);
+  expect(prettyPrint(stylesheet), generated);
 }
 
 void testNewerCss() {
@@ -186,7 +195,7 @@ void testNewerCss() {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString().trim(), generated);
+  expect(prettyPrint(stylesheet), generated);
 }
 
 void testCssFile() {
@@ -243,11 +252,35 @@ div[href^='test'] {
 
   expect(stylesheet != null, true);
 
-  expect(stylesheet.toString().trim(), generated);
+  expect(prettyPrint(stylesheet), generated);
+}
+
+void testCompactEmitter() {
+  // Check !import compactly emitted.
+  final String input = r'''
+div {
+  color: green !important;
+}
+''';
+  final String generated = "div { color: green!important; }";
+  var cssErrors = [];
+  var stylesheet = parseCss(input, errors: cssErrors);
+  expect(cssErrors.isEmpty, true);
+  expect(stylesheet != null, true);
+  expect(compactOuptut(stylesheet), generated);
+
+  // Check namespace directive compactly emitted.
+  final String input2 = "@namespace a url(http://www.example.org/a);";
+  final String generated2 = "@namespace a url(http://www.example.org/a);";
+  var cssErrors2 = [];
+  var stylesheet2 = parseCss(input2, errors: cssErrors2);
+  expect(cssErrors2.isEmpty, true);
+  expect(stylesheet2 != null, true);
+  expect(compactOuptut(stylesheet2), generated2);
 }
 
 main() {
-  useVmConfiguration();
+  useVMConfiguration();
   useMockMessages();
 
   test('Simple Terms', testSimpleTerms);
@@ -256,4 +289,5 @@ main() {
   test('Composites', testComposites);
   test('Newer CSS', testNewerCss);
   test('CSS file', testCssFile);
+  test('Compact Emitter', testCompactEmitter);
 }

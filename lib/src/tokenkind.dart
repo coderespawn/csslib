@@ -175,7 +175,7 @@ class TokenKind {
     const {'type': TokenKind.DIRECTIVE_NAMESPACE, 'value' : 'namespace'},
   ];
 
-  static const List<Map<int, String>> _MARGIN_DIRECTIVES = const [
+  static const List<Map<int, String>> MARGIN_DIRECTIVES = const [
     const {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER,
         'value' : 'top-left-corner'},
     const {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFT,
@@ -490,7 +490,7 @@ class TokenKind {
 
   /** Return the token that matches the margin directive name found. */
   static int matchMarginDirectives(String text, int offset, int length) {
-    return matchList(_MARGIN_DIRECTIVES, 'type', text, offset, length);
+    return matchList(MARGIN_DIRECTIVES, 'type', text, offset, length);
   }
 
   static String idToValue(var identList, int tokenId) {

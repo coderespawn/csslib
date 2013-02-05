@@ -4,6 +4,7 @@
 
 library css;
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as Math;
@@ -11,13 +12,12 @@ import 'dart:math' as Math;
 import 'package:web_ui/src/file_system.dart';
 import 'package:web_ui/src/file_system/console.dart';
 import 'package:web_ui/src/file_system/path.dart' as fs;
+import 'package:web_ui/src/utils.dart';
 
 import 'src/compiler.dart';
 import 'src/generate.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
-import 'src/styleimpl/styleimpl.dart';
-import 'src/utils.dart';
 import 'src/validate.dart';
 
 FileSystem fileSystem;
@@ -37,7 +37,7 @@ Future run(List<String> args) {
   return asyncTime('Total time spent on ${options.inputFile}', () {
     var currentDir = new Directory.current().path;
     var compiler = new Compiler(fileSystem, options, currentDir);
-    return compiler.run().chain((_) {
+    return compiler.run().then((_) {
       // Write out the code associated with each source file.
       for (var file in compiler.output) {
         writeFile(file.path, file.contents, options.clean);

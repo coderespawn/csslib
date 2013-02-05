@@ -2,7 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of styleimpl;
+/** Representations of CSS styles. */
+
+part of parser;
 
 // TODO(terry): Prune down this file we do need some of the code in this file
 //              for darker, lighter, how to represent a Font, etc but alot of
@@ -51,7 +53,7 @@ abstract class ColorBase {
  * converted to and from num, hex string, hsl, hsla, rgb, rgba and SVG pre-
  * defined color constant.
  */
-class Color implements _StyleProperty, ColorBase, Hashable {
+class Color implements _StyleProperty, ColorBase {
   // If _argb length is 6 it's an rrggbb otherwise it's aarrggbb.
   final String _argb;
 
@@ -167,7 +169,7 @@ class Color implements _StyleProperty, ColorBase, Hashable {
       // Get alpha blending value 0..255
       int alpha = Color.hexToInt(_argb.substring(nextIndex, nextIndex + 2));
       // Convert to value from 0..1
-      a = Math.parseDouble((alpha / 255).toStringAsPrecision(2));
+      a = double.parse((alpha / 255).toStringAsPrecision(2));
       nextIndex += 2;
     }
     int r = Color.hexToInt(_argb.substring(nextIndex, nextIndex + 2));
@@ -269,7 +271,7 @@ class Color implements _StyleProperty, ColorBase, Hashable {
       var args = <num>[];
       List<String> params = color.split(",");
       for (String param in params) {
-        args.add(Math.parseDouble(param));
+        args.add(double.parse(param));
       }
       switch (type) {
         case _rgbCss:
@@ -341,7 +343,7 @@ class Color implements _StyleProperty, ColorBase, Hashable {
   }
 
   static num _clamp(num value, num min, num max) =>
-      Math.max(Math.min(max, value), min);
+      math.max(math.min(max, value), min);
 
   /**
    * Change the tint (make color lighter) or shade (make color darker) of all
@@ -540,7 +542,7 @@ class Color implements _StyleProperty, ColorBase, Hashable {
 /**
  * Rgba class for users that want to interact with a color as a RGBA value.
  */
-class Rgba implements _StyleProperty, ColorBase, Hashable {
+class Rgba implements _StyleProperty, ColorBase {
   // TODO(terry): Consider consolidating rgba to a single 32-bit int, make sure
   //              it works under JS and Dart VM.
   final int r;
@@ -664,7 +666,7 @@ class Rgba implements _StyleProperty, ColorBase, Hashable {
  * 360° = 1 or 0, (1° == (1/360)), saturation and lightness is a 0..1 fraction
  * (1 == 100%) and alpha is a 0..1 fraction.
  */
-class Hsla implements _StyleProperty, ColorBase, Hashable {
+class Hsla implements _StyleProperty, ColorBase {
   final num _h;             // Value from 0..1
   final num _s;             // Value from 0..1
   final num _l;             // Value from 0..1
@@ -700,7 +702,7 @@ class Hsla implements _StyleProperty, ColorBase, Hashable {
 
     // Convert alpha to 0..1 from (0..255).
     if (a != null) {
-      a = Math.parseDouble((a / 255).toStringAsPrecision(2));
+      a = double.parse((a / 255).toStringAsPrecision(2));
     }
 
     return _createFromRgba(r, g, b, a);
@@ -722,8 +724,8 @@ class Hsla implements _StyleProperty, ColorBase, Hashable {
     num s;
     num l;
 
-    num minRgb = Math.min(r, Math.min(g, b));
-    num maxRgb = Math.max(r, Math.max(g, b));
+    num minRgb = math.min(r, math.min(g, b));
+    num maxRgb = math.max(r, math.max(g, b));
     l = (maxRgb + minRgb) / 2;
     if (l <= 0) {
       return new Hsla(0, 0, l);   // Black;

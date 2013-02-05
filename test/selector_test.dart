@@ -8,49 +8,55 @@ import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
+
+// Pretty printer for CSS.
+var emitSelector = new CssPrinter();
 
 void testSelectorSuccesses() {
   var cssErrors = [];
   var selectorAst = selector('#div .foo', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('#div .foo', selectorAst.toString());
+  expect('#div .foo', (emitSelector..visitTree(selectorAst)).toString());
 
   // Valid selectors for class names.
   cssErrors = [];
   selectorAst = selector('.foo', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('.foo', selectorAst.toString());
+  expect('.foo', (emitSelector..visitTree(selectorAst)).toString());
 
   cssErrors = [];
   selectorAst = selector('.foobar .xyzzy', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('.foobar .xyzzy', selectorAst.toString());
+  expect('.foobar .xyzzy', (emitSelector..visitTree(selectorAst)).toString());
 
   cssErrors = [];
   selectorAst = selector('.foobar .a-story .xyzzy', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('.foobar .a-story .xyzzy', selectorAst.toString());
+  expect('.foobar .a-story .xyzzy',
+      (emitSelector..visitTree(selectorAst)).toString());
 
   cssErrors = [];
   selectorAst = selector('.foobar .xyzzy .a-story .b-story', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('.foobar .xyzzy .a-story .b-story', selectorAst.toString());
+  expect('.foobar .xyzzy .a-story .b-story',
+      (emitSelector..visitTree(selectorAst)).toString());
 
   // Valid selectors for element IDs.
   cssErrors = [];
   selectorAst = selector('#id1', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('#id1', selectorAst.toString());
+  expect('#id1', (emitSelector..visitTree(selectorAst)).toString());
 
   cssErrors = [];
   selectorAst = selector('#id-number-3', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('#id-number-3', selectorAst.toString());
+  expect('#id-number-3', (emitSelector..visitTree(selectorAst)).toString());
 
   cssErrors = [];
   selectorAst = selector('#_privateId', errors: cssErrors);
   expect(cssErrors.isEmpty, true);
-  expect('#_privateId', selectorAst.toString());
+  expect('#_privateId', (emitSelector..visitTree(selectorAst)).toString());
 }
 
 // TODO(terry): Move this failure case to a failure_test.dart when the analyzer
@@ -68,7 +74,7 @@ SEVERE <#SourceFile .foobar .1a-story .xyzzy> @ line 1 (column 8:10)
 }
 
 main() {
-  useVmConfiguration();
+  useVMConfiguration();
   useMockMessages();
 
   test('Valid Selectors', testSelectorSuccesses);

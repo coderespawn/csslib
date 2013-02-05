@@ -8,7 +8,13 @@ import 'dart:utf';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
 import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
 import 'testing.dart';
+
+// Pretty printer for CSS.
+var emitCss = new CssPrinter();
+String prettyPrint(StyleSheet ss) =>
+    (emitCss..visitTree(ss, pretty: true)).toString();
 
 void testClass() {
   var cssErrors = [];
@@ -492,8 +498,7 @@ void testArrayOfChars() {
   var stylesheet = parse(encodeUtf8(input), errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foo {
   color: #ff0000;
   left: 20px;
@@ -532,8 +537,7 @@ void testEmitter() {
   var stylesheet = parseCss(input, errors: cssErrors);
   expect(cssErrors.isEmpty, true);
 
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foo {
   color: #ff0000;
   left: 20px;
@@ -548,7 +552,7 @@ void testEmitter() {
 }
 
 main() {
-  useVmConfiguration();
+  useVMConfiguration();
   useMockMessages();
 
   test('Classes', testClass);

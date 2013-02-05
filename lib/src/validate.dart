@@ -5,6 +5,7 @@
 library validate;
 
 import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
 
 /** Can be thrown on any Css runtime problem includes source location. */
 class CssSelectorException implements Exception {

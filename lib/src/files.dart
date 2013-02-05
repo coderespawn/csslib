@@ -5,9 +5,10 @@
 library files;
 
 import 'package:web_ui/src/file_system/path.dart';
+import 'package:web_ui/src/utils.dart';
 import 'options.dart';
 import 'package:csslib/parser.dart';
-import 'utils.dart';
+import 'package:csslib/visitor.dart';
 
 /** An input file to process by the CSS compiler. */
 class SourceFile {
@@ -20,7 +21,7 @@ class SourceFile {
   final List<int> lineStarts = [0];
 
   /** AST of the compiled source (text). */
-  Stylesheet tree;
+  StyleSheet tree;
 
   SourceFile(this.path, {String source}) : text = source;
 

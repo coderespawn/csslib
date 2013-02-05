@@ -8,6 +8,12 @@ import 'package:unittest/unittest.dart';
 import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
+import 'package:csslib/visitor.dart';
+
+// Pretty printer for CSS.
+var emitCss = new CssPrinter();
+String prettyPrint(StyleSheet ss) =>
+    (emitCss..visitTree(ss, pretty: true)).toString();
 
 /**
  * Test for unsupported font-weights values of bolder, lighter and inherit.
@@ -27,8 +33,8 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:29)
                        ^^^^^^ Unknown property value bolder
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
 
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   font-weight: bolder;
 }''');
@@ -46,8 +52,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
                        ^^^^^^^ Unknown property value lighter
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   font-weight: lighter;
 }''');
@@ -65,8 +70,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
                        ^^^^^^^ Unknown property value inherit
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   font-weight: inherit;
 }''');
@@ -90,8 +94,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:26)
                        ^^^ Unexpected value for line-height
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   line-height: 120%;
 }''');
@@ -109,8 +112,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:25)
                        ^^ Unexpected unit for line-height
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   line-height: 20cm;
 }''');
@@ -128,8 +130,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
                        ^^^^^^^ Unknown property value inherit
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   line-height: inherit;
 }''');
@@ -150,8 +151,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 0:1)
 ^ Not a valid ID selector expected #id
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 # foo {
   color: #ff00ff;
 }''');
@@ -168,8 +168,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 0:1)
 ^ Not a valid class selector expected .className
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 . foo {
   color: #ff00ff;
 }''');
@@ -190,8 +189,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
                  ^^^^^^ Bad hex number
 ''');
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   color: #AH787;
 }''');
@@ -209,8 +207,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
 ''');
 
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   color: redder;
 }''');
@@ -228,8 +225,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
 ''');
 
   expect(stylesheet != null, true);
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   color: # ffffff;
 }''');
@@ -250,8 +246,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
 
   // Formating is off with an extra space.  However, the entire value is bad
   // and isn't processed anyway.
-  expect(stylesheet.toString(), r'''
-
+  expect(prettyPrint(stylesheet), r'''
 .foobar {
   color: # 123 fff;
 }''');
@@ -259,7 +254,7 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
 }
 
 main() {
-  useVmConfiguration();
+  useVMConfiguration();
   useMockMessages();
 
   test('font-weight value errors', testUnsupportedFontWeights);

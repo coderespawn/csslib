@@ -129,9 +129,9 @@ class SuiteTest {
         expect(stylesheet != null, true, reason: directoryName);
 
         var orgCss = _normalizeCss(node.value);
-        // TODO(terry): Need to remove toStringCompact to use an emitter,
-        //              similar to dwc.
-        var newCssAsCompact = stylesheet.toStringCompact();
+
+        // Compare the CSS using a compressed emitter.
+        var newCssAsCompact = compactCss(stylesheet);
         if (newCssAsCompact != orgCss) {
           // Remove an trailing semi-colons.
           if (orgCss.endsWith(';')) {
@@ -237,7 +237,7 @@ class Suite {
 
       // Process each file.
       lister.onFile = (path) {
-        Path filePath = new Path.fromNative(path);
+        Path filePath = new Path(path);
         File file = new File.fromPath(filePath);
         if (file.existsSync()) {
           if (filePath.extension == 'xht' || filePath.extension == 'html' ||

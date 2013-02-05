@@ -1,8 +1,8 @@
 name: csslib
 author: "Dart Team <misc@dartlang.org>"
 homepage: https://github.com/dart-lang/csslib
-description: A library for working with CSS.
-version: 0.0.2
+description: A library for parsing CSS.
+version: 0.3.2
 dependencies:
   args: any
   logging: any
@@ -10,4 +10,4 @@ dependencies:
   # TODO(terry): Bring in web_ui library for the file_system.  Should be
   #              removed when the file_system is refactored out of web_ui.
   #              See https://github.com/dart-lang/csslib/issues/6
-  web_ui: ">=0.2.10 <0.2.11"
+  web_ui: ">=0.3.2 <0.3.3"
