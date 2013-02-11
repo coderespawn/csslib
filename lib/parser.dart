@@ -1598,6 +1598,7 @@ class Parser {
     case TokenKind.UNIT_ANGLE_DEG:
     case TokenKind.UNIT_ANGLE_RAD:
     case TokenKind.UNIT_ANGLE_GRAD:
+    case TokenKind.UNIT_ANGLE_TURN:
       term = new AngleTerm(value, t.text, _makeSpan(start), unitType);
       _next();    // Skip the unit
       break;
@@ -1618,6 +1619,27 @@ class Parser {
     case TokenKind.UNIT_FRACTION:
       term = new FractionTerm(value, t.text, _makeSpan(start));
       _next();     // Skip the unit
+      break;
+    case TokenKind.UNIT_RESOLUTION_DPI:
+    case TokenKind.UNIT_RESOLUTION_DPCM:
+    case TokenKind.UNIT_RESOLUTION_DPPX:
+      term = new ResolutionTerm(value, t.text, _makeSpan(start), unitType);
+      _next();    // Skip the unit
+      break;
+    case TokenKind.UNIT_CH:
+      term = new ChTerm(value, t.text, _makeSpan(start), unitType);
+      _next();    // Skip the unit
+      break;
+    case TokenKind.UNIT_REM:
+      term = new RemTerm(value, t.text, _makeSpan(start), unitType);
+      _next();    // Skip the unit
+      break;
+    case TokenKind.UNIT_VIEWPORT_VW:
+    case TokenKind.UNIT_VIEWPORT_VH:
+    case TokenKind.UNIT_VIEWPORT_VMIN:
+    case TokenKind.UNIT_VIEWPORT_VMAX:
+      term = new ViewportTerm(value, t.text, _makeSpan(start), unitType);
+      _next();    // Skip the unit
       break;
     default:
       if (value != null) {
@@ -1745,7 +1767,7 @@ class Parser {
     int hexValue = 0;
 
      for (int i = 0; i < hexText.length; i++) {
-      var digit = _hexDigit(hexText.charCodeAt(i));
+      var digit = _hexDigit(hexText.codeUnitAt(i));
       if (digit < 0) {
         _warning('Bad hex number', start);
         return new HexColorTerm(new BAD_HEX_VALUE(), hexText, start);

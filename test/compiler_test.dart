@@ -6,7 +6,6 @@ library compiler_test;
 
 import 'dart:utf';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
 import 'testing.dart';
@@ -552,9 +551,6 @@ void testEmitter() {
 }
 
 main() {
-  useVMConfiguration();
-  useMockMessages();
-
   test('Classes', testClass);
   test('Classes 2', testClass2);
   test('Ids', testId);

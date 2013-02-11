@@ -5,7 +5,6 @@
 library declaration_test;
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
@@ -147,6 +146,130 @@ void testComposites() {
 
   var cssErrors = [];
   var stylesheet = parseCss(input, errors: cssErrors);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
+  expect(cssErrors.isEmpty, true);
+
+  expect(stylesheet != null, true);
+
+  expect(prettyPrint(stylesheet), generated);
+}
+
+void testUnits() {
+  final String input = r'''
+#id-1 {
+  transition: color 0.4s;
+  animation-duration: 500ms;
+  top: 1em;
+  left: 200ex;
+  right: 300px;
+  bottom: 400cm;
+  border-width: 2.5mm;
+  margin-top: .5in;
+  margin-left: 5pc;
+  margin-right: 5ex;
+  margin-bottom: 5ch;
+  font-size: 10pt;
+  padding-top: 22rem;
+  padding-left: 33vw;
+  padding-right: 34vh;
+  padding-bottom: 3vmin;
+  transform: rotate(20deg);
+  voice-pitch: 10hz;
+}
+#id-2 {
+  left: 2fr;
+  font-size: 10vmax;
+  transform: rotatex(20rad);
+  voice-pitch: 10khz;
+  -web-kit-resolution: 2dpi;    /* Bogus property name testing dpi unit. */
+}
+#id-3 {
+  -web-kit-resolution: 3dpcm;   /* Bogus property name testing dpi unit. */
+  transform: rotatey(20grad);
+}
+#id-4 {
+  -web-kit-resolution: 4dppx;   /* Bogus property name testing dpi unit. */
+  transform: rotatez(20turn);
+}
+''';
+
+  final String generated = r'''
+#id-1 {
+  transition: color 0.4s;
+  animation-duration: 500ms;
+  top: 1em;
+  left: 200ex;
+  right: 300px;
+  bottom: 400cm;
+  border-width: 2.5mm;
+  margin-top: .5in;
+  margin-left: 5pc;
+  margin-right: 5ex;
+  margin-bottom: 5ch;
+  font-size: 10pt;
+  padding-top: 22rem;
+  padding-left: 33vw;
+  padding-right: 34vh;
+  padding-bottom: 3vmin;
+  transform: rotate(20deg);
+  voice-pitch: 10hz;
+}
+#id-2 {
+  left: 2fr;
+  font-size: 10vmax;
+  transform: rotatex(20rad);
+  voice-pitch: 10khz;
+  -web-kit-resolution: 2dpi;
+}
+#id-3 {
+  -web-kit-resolution: 3dpcm;
+  transform: rotatey(20grad);
+}
+#id-4 {
+  -web-kit-resolution: 4dppx;
+  transform: rotatez(20turn);
+}''';
+
+  var cssErrors = [];
+  var stylesheet = parseCss(input, errors: cssErrors,
+      opts: ['--no-colors', 'memory']);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
+  expect(cssErrors.isEmpty, true);
+
+  expect(stylesheet != null, true);
+
+  expect(prettyPrint(stylesheet), generated);
+}
+
+void testUnicode() {
+  final String input = r'''
+.toggle:after {
+  content: '✔';
+  line-height: 43px;
+  font-size: 20px;
+  color: #d9d9d9;
+  text-shadow: 0 -1px 0 #bfbfbf;
+}
+''';
+
+  final String generated = r'''
+.toggle:after {
+  content: "✔";
+  line-height: 43px;
+  font-size: 20px;
+  color: #d9d9d9;
+  text-shadow: 0 -1px 0 #bfbfbf;
+}''';
+
+  var cssErrors = [];
+  var stylesheet = parseCss(input, errors: cssErrors);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -191,6 +314,9 @@ void testNewerCss() {
 
   var cssErrors = [];
   var stylesheet = parseCss(input, errors: cssErrors);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -248,6 +374,9 @@ div[href^='test'] {
       '}';
   var cssErrors = [];
   var stylesheet = parseCss(input, errors: cssErrors);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
   expect(cssErrors.isEmpty, true);
 
   expect(stylesheet != null, true);
@@ -265,6 +394,9 @@ div {
   final String generated = "div { color: green!important; }";
   var cssErrors = [];
   var stylesheet = parseCss(input, errors: cssErrors);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
   expect(cssErrors.isEmpty, true);
   expect(stylesheet != null, true);
   expect(compactOuptut(stylesheet), generated);
@@ -280,13 +412,12 @@ div {
 }
 
 main() {
-  useVMConfiguration();
-  useMockMessages();
-
   test('Simple Terms', testSimpleTerms);
   test('Declarations', testDeclarations);
   test('Identifiers', testIdentifiers);
   test('Composites', testComposites);
+  test('Units', testUnits);
+  test('Unicode', testUnicode);
   test('Newer CSS', testNewerCss);
   test('CSS file', testCssFile);
   test('Compact Emitter', testCompactEmitter);

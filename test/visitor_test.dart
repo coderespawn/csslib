@@ -6,7 +6,6 @@ library visitor_test;
 
 import 'dart:utf';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
 import 'testing.dart';
@@ -110,9 +109,6 @@ div.myComponent_xyzzy {
 }
 
 main() {
-  useVMConfiguration();
-  useMockMessages();
-
   test('Class Visitors', testClassVisitors);
   test('Polyfill', testPolyFill);
 }

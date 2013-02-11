@@ -5,7 +5,6 @@
 library selector_test;
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
@@ -74,9 +73,6 @@ SEVERE <#SourceFile .foobar .1a-story .xyzzy> @ line 1 (column 8:10)
 }
 
 main() {
-  useVMConfiguration();
-  useMockMessages();
-
   test('Valid Selectors', testSelectorSuccesses);
   test('Invalid Selectors', testSelectorFailures);
 }

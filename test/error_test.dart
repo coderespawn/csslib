@@ -5,7 +5,6 @@
 library error_test;
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'testing.dart';
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
@@ -254,9 +253,6 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
 }
 
 main() {
-  useVMConfiguration();
-  useMockMessages();
-
   test('font-weight value errors', testUnsupportedFontWeights);
   test('line-height value errors', testUnsupportedLineHeights);
   test('bad selectors', testBadSelectors);

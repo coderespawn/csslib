@@ -10,7 +10,7 @@ library run_impl;
 
 import 'dart:io';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
+import 'package:unittest/compact_vm_config.dart';
 import 'css2_1/backgrounds_test.dart' as backgrounds;
 import 'css2_1/borders_test.dart' as borders;
 import 'css2_1/box_display_test.dart' as box_display;
@@ -50,6 +50,7 @@ import 'css3-text/css3_text_test.dart' as css3Text;
 import 'css3-writing-modes/css3_writing_modes_test.dart' as css3Modes;
 import 'selectors3/selectors3_test.dart' as selectors3;
 import 'suite_options.dart';
+import '../testing.dart';
 
 main() {
   options = SuiteOptions.parse(new Options().arguments);
@@ -58,7 +59,8 @@ main() {
   // Match name passed or anything if nothing passed.
   var pattern = new RegExp(options.name.length == 0 ? '.' : options.name);
 
-  useVmConfiguration();
+  useCompactVMConfiguration();
+  useMockMessages();
 
   // CSS 2.1 tests:
   if (pattern.hasMatch('backgrounds')) backgrounds.main();

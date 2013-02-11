@@ -465,6 +465,8 @@ class UnitTerm extends LiteralTerm {
   visit(VisitorBase visitor) => visitor.visitUnitTerm(this);
 
   String unitToString() => TokenKind.unitToString(_unit);
+
+  String toString() => '$text${unitToString()}';
 }
 
 class LengthTerm extends UnitTerm {
@@ -501,7 +503,8 @@ class AngleTerm extends UnitTerm {
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(this._unit == TokenKind.UNIT_ANGLE_DEG ||
         this._unit == TokenKind.UNIT_ANGLE_RAD ||
-        this._unit == TokenKind.UNIT_ANGLE_GRAD);
+        this._unit == TokenKind.UNIT_ANGLE_GRAD ||
+        this._unit == TokenKind.UNIT_ANGLE_TURN);
   }
 
   visit(VisitorBase visitor) => visitor.visitAngleTerm(this);
@@ -538,6 +541,47 @@ class UriTerm extends LiteralTerm {
   UriTerm(String value, SourceSpan span) : super(value, value, span);
 
   visit(VisitorBase visitor) => visitor.visitUriTerm(this);
+}
+
+class ResolutionTerm extends UnitTerm {
+  ResolutionTerm(var value, String t, SourceSpan span,
+    [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
+    assert(_unit == TokenKind.UNIT_RESOLUTION_DPI ||
+        _unit == TokenKind.UNIT_RESOLUTION_DPCM ||
+        _unit == TokenKind.UNIT_RESOLUTION_DPPX);
+  }
+
+  visit(VisitorBase visitor) => visitor.visitResolutionTerm(this);
+}
+
+class ChTerm extends UnitTerm {
+  ChTerm(var value, String t, SourceSpan span,
+    [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
+    assert(_unit == TokenKind.UNIT_CH);
+  }
+
+  visit(VisitorBase visitor) => visitor.visitChTerm(this);
+}
+
+class RemTerm extends UnitTerm {
+  RemTerm(var value, String t, SourceSpan span,
+    [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
+    assert(_unit == TokenKind.UNIT_REM);
+  }
+
+  visit(VisitorBase visitor) => visitor.visitRemTerm(this);
+}
+
+class ViewportTerm extends UnitTerm {
+  ViewportTerm(var value, String t, SourceSpan span,
+    [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
+    assert(_unit == TokenKind.UNIT_VIEWPORT_VW ||
+        _unit == TokenKind.UNIT_VIEWPORT_VH ||
+        _unit == TokenKind.UNIT_VIEWPORT_VMIN ||
+        _unit == TokenKind.UNIT_VIEWPORT_VMAX);
+  }
+
+  visit(VisitorBase visitor) => visitor.visitViewportTerm(this);
 }
 
 /** Type to signal a bad hex value for HexColorTerm.value. */

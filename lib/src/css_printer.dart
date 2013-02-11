@@ -266,11 +266,11 @@ class CssPrinter extends Visitor {
   }
 
   void visitUnitTerm(UnitTerm node) {
-    emit('${node.text}${node.unitToString()}');
+    emit(node.toString());
   }
 
   void visitLengthTerm(LengthTerm node) {
-    emit('${node.text}${node.unitToString()}');
+    emit(node.toString());
   }
 
   void visitPercentageTerm(PercentageTerm node) {
@@ -286,18 +286,15 @@ class CssPrinter extends Visitor {
   }
 
   void visitAngleTerm(AngleTerm node) {
-    // TODO(terry): TBD
-    throw UnimplementedError;
+    emit(node.toString());
   }
 
   void visitTimeTerm(TimeTerm node) {
-    // TODO(terry): TBD
-    throw UnimplementedError;
+    emit(node.toString());
   }
 
   void visitFreqTerm(FreqTerm node) {
-    // TODO(terry): TBD
-    throw UnimplementedError;
+    emit(node.toString());
   }
 
   void visitFractionTerm(FractionTerm node) {
@@ -306,6 +303,14 @@ class CssPrinter extends Visitor {
 
   void visitUriTerm(UriTerm node) {
     emit('url("${node.text}")');
+  }
+
+  void visitResolutionTerm(ResolutionTerm node) {
+    emit(node.toString());
+  }
+
+  void visitViewportTerm(ViewportTerm node) {
+    emit(node.toString());
   }
 
   void visitFunctionTerm(FunctionTerm node) {

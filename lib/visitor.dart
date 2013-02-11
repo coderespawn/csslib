@@ -57,6 +57,10 @@ abstract class VisitorBase {
   void visitFreqTerm(FreqTerm node);
   void visitFractionTerm(FractionTerm node);
   void visitUriTerm(UriTerm node);
+  void visitResolutionTerm(ResolutionTerm node);
+  void visitChTerm(ChTerm node);
+  void visitRemTerm(RemTerm node);
+  void visitViewportTerm(ViewportTerm node);
   void visitFunctionTerm(FunctionTerm node);
   void visitGroupTerm(GroupTerm node);
   void visitItemTerm(ItemTerm node);
@@ -266,6 +270,22 @@ class Visitor implements VisitorBase {
 
   void visitUriTerm(UriTerm node) {
     visitLiteralTerm(node);
+  }
+
+  void visitResolutionTerm(ResolutionTerm node) {
+    visitUnitTerm(node);
+  }
+
+  void visitChTerm(ChTerm node) {
+    visitUnitTerm(node);
+  }
+
+  void visitRemTerm(RemTerm node) {
+    visitUnitTerm(node);
+  }
+
+  void visitViewportTerm(ViewportTerm node) {
+    visitUnitTerm(node);
   }
 
   void visitFunctionTerm(FunctionTerm node) {

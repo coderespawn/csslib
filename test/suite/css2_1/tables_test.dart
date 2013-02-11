@@ -7,7 +7,6 @@ library suite_files;
 import 'dart:io';
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import '../../testing.dart';
 import '../suite_files.dart';
 
@@ -16,9 +15,6 @@ Map<String, Object> _ExeceptionMatches = {
 };
 
 main() {
-  useVmConfiguration();
-  useMockMessages();
-
   var suite = new Suite('css2_1/src/tables');
   suite.processTests(_ExeceptionMatches);
 }

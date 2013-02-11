@@ -119,12 +119,22 @@ class TokenKind {
   static const int UNIT_ANGLE_DEG = 608;
   static const int UNIT_ANGLE_RAD = 609;
   static const int UNIT_ANGLE_GRAD = 610;
-  static const int UNIT_TIME_MS = 611;
-  static const int UNIT_TIME_S = 612;
-  static const int UNIT_FREQ_HZ = 613;
-  static const int UNIT_FREQ_KHZ = 614;
-  static const int UNIT_PERCENT = 615;
-  static const int UNIT_FRACTION = 616;
+  static const int UNIT_ANGLE_TURN = 611;
+  static const int UNIT_TIME_MS = 612;
+  static const int UNIT_TIME_S = 613;
+  static const int UNIT_FREQ_HZ = 614;
+  static const int UNIT_FREQ_KHZ = 615;
+  static const int UNIT_PERCENT = 616;
+  static const int UNIT_FRACTION = 617;
+  static const int UNIT_RESOLUTION_DPI = 618;
+  static const int UNIT_RESOLUTION_DPCM = 619;
+  static const int UNIT_RESOLUTION_DPPX = 620;
+  static const int UNIT_CH = 621;   // Measure of "0" U+0030 glyph.
+  static const int UNIT_REM = 622;  // computed value ‘font-size’ on root elem.
+  static const int UNIT_VIEWPORT_VW = 623;
+  static const int UNIT_VIEWPORT_VH = 624;
+  static const int UNIT_VIEWPORT_VMIN = 625;
+  static const int UNIT_VIEWPORT_VMAX = 626;
 
   // Directives (@nnnn)
   static const int DIRECTIVE_NONE = 650;
@@ -222,12 +232,22 @@ class TokenKind {
     const {'unit': TokenKind.UNIT_ANGLE_DEG, 'value' : 'deg'},
     const {'unit': TokenKind.UNIT_ANGLE_RAD, 'value' : 'rad'},
     const {'unit': TokenKind.UNIT_ANGLE_GRAD, 'value' : 'grad'},
+    const {'unit': TokenKind.UNIT_ANGLE_TURN, 'value' : 'turn'},
     const {'unit': TokenKind.UNIT_TIME_MS, 'value' : 'ms'},
     const {'unit': TokenKind.UNIT_TIME_S, 'value' : 's'},
     const {'unit': TokenKind.UNIT_FREQ_HZ, 'value' : 'hz'},
     const {'unit': TokenKind.UNIT_FREQ_KHZ, 'value' : 'khz'},
     const {'unit': TokenKind.UNIT_FRACTION, 'value' : 'fr'},
-  ];
+    const {'unit': TokenKind.UNIT_RESOLUTION_DPI, 'value' : 'dpi'},
+    const {'unit': TokenKind.UNIT_RESOLUTION_DPCM, 'value' : 'dpcm'},
+    const {'unit': TokenKind.UNIT_RESOLUTION_DPPX, 'value' : 'dppx'},
+    const {'unit': TokenKind.UNIT_CH, 'value' : 'ch'},
+    const {'unit': TokenKind.UNIT_REM, 'value' : 'rem'},
+    const {'unit': TokenKind.UNIT_VIEWPORT_VW, 'value' : 'vw'},
+    const {'unit': TokenKind.UNIT_VIEWPORT_VH, 'value' : 'vh'},
+    const {'unit': TokenKind.UNIT_VIEWPORT_VMIN, 'value' : 'vmin'},
+    const {'unit': TokenKind.UNIT_VIEWPORT_VMAX, 'value' : 'vmax'},
+    ];
 
   // Some more constants:
   static const int ASCII_UPPER_A = 65;    // ASCII value for uppercase A
@@ -457,8 +477,8 @@ class TokenKind {
         int idx = offset;
         bool match = true;
         for (int identIdx = 0; identIdx < ident.length; identIdx++) {
-          int identChar = ident.charCodeAt(identIdx);
-          int char = text.charCodeAt(idx++);
+          int identChar = ident.codeUnitAt(identIdx);
+          int char = text.codeUnitAt(idx++);
           // Compare lowercase to lowercase then check if char is uppercase.
           match = match && (char == identChar ||
               ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) &&
@@ -532,8 +552,8 @@ class TokenKind {
         int idx = 0;
         bool match = true;
         for (int identIdx = 0; identIdx < ident.length; identIdx++) {
-          int identChar = ident.charCodeAt(identIdx);
-          int char = text.charCodeAt(idx++);
+          int identChar = ident.codeUnitAt(identIdx);
+          int char = text.codeUnitAt(idx++);
           // Compare lowercase to lowercase then check if char is uppercase.
           match = match && (char == identChar ||
               ((char >= ASCII_UPPER_A && char <= ASCII_UPPER_Z) &&

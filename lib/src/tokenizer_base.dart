@@ -30,7 +30,7 @@ abstract class TokenizerBase {
 
   int _nextChar() {
     if (_index < _text.length) {
-      return _text.charCodeAt(_index++);
+      return _text.codeUnitAt(_index++);
     } else {
       return 0;
     }
@@ -38,7 +38,7 @@ abstract class TokenizerBase {
 
   int _peekChar() {
     if (_index < _text.length) {
-      return _text.charCodeAt(_index);
+      return _text.codeUnitAt(_index);
     } else {
       return 0;
     }
@@ -46,7 +46,7 @@ abstract class TokenizerBase {
 
   bool _maybeEatChar(int ch) {
     if (_index < _text.length) {
-      if (_text.charCodeAt(_index) == ch) {
+      if (_text.codeUnitAt(_index) == ch) {
         _index++;
         return true;
       } else {
@@ -77,7 +77,7 @@ abstract class TokenizerBase {
   Token finishWhitespace() {
     _index--;
     while (_index < _text.length) {
-      final ch = _text.charCodeAt(_index++);
+      final ch = _text.codeUnitAt(_index++);
       if (ch == TokenChar.SPACE ||
           ch == TokenChar.TAB ||
           ch == TokenChar.RETURN) {
@@ -138,7 +138,7 @@ abstract class TokenizerBase {
 
   void eatDigits() {
     while (_index < _text.length) {
-      if (TokenizerHelpers.isDigit(_text.charCodeAt(_index))) {
+      if (TokenizerHelpers.isDigit(_text.codeUnitAt(_index))) {
         _index++;
       } else {
         return;
@@ -169,7 +169,7 @@ abstract class TokenizerBase {
     }
     var result = 0;
     while (_index < maxIndex) {
-      final digit = _hexDigit(_text.charCodeAt(_index));
+      final digit = _hexDigit(_text.codeUnitAt(_index));
       if (digit == -1) {
         if (hexLength == null) {
           return result;
@@ -177,7 +177,7 @@ abstract class TokenizerBase {
           return -1;
         }
       }
-      _hexDigit(_text.charCodeAt(_index));
+      _hexDigit(_text.codeUnitAt(_index));
       // Multiply by 16 rather than shift by 4 since that will result in a
       // correct value for numbers that exceed the 32 bit precision of JS
       // 'integers'.
@@ -398,7 +398,7 @@ abstract class TokenizerBase {
 
   Token finishIdentifier(int ch) {
     while (_index < _text.length) {
-      if (!TokenizerHelpers.isIdentifierPart(_text.charCodeAt(_index++))) {
+      if (!TokenizerHelpers.isIdentifierPart(_text.codeUnitAt(_index++))) {
         _index--;
         break;
       }
