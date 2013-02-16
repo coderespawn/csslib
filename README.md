@@ -4,7 +4,7 @@ csslib in Pure Dart
 This is a pure [Dart][dart] [CSS parser][cssparse]. Since it's 100%
 Dart you can use it safely from a script or server side app.
 
-[![](https://drone.io/dart-lang/csslib/status.png)](https://drone.io/dart-lang/csslib/latest)
+[![Build Status](https://drone.io/github.com/dart-lang/csslib/status.png)](https://drone.io/github.com/dart-lang/csslib/latest)
 
 Installation
 ------------
