@@ -9,65 +9,74 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as Math;
 
-import 'package:web_ui/src/file_system.dart';
-import 'package:web_ui/src/file_system/console.dart';
-import 'package:web_ui/src/file_system/path.dart' as fs;
-import 'package:web_ui/src/utils.dart';
+import 'package:pathos/path.dart' as path;
 
-import 'src/compiler.dart';
-import 'src/generate.dart';
+import 'parser.dart';
+import 'visitor.dart';
+import 'src/files.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
-import 'src/validate.dart';
-
-FileSystem fileSystem;
 
 void main() {
-  run(new Options().arguments);
-}
+  // TODO(jmesserly): fix this to return a proper exit code
+  var options = PreprocessorOptions.parse(new Options().arguments);
+  if (options == null) return;
 
-// TODO(jmesserly): fix this to return a proper exit code
-Future run(List<String> args) {
-  var options = PreprocessorOptions.parse(args);
-  if (options == null) return new Future.immediate(null);
-
-  fileSystem = new ConsoleFileSystem();
   messages = new Messages(options: options);
 
-  return asyncTime('Total time spent on ${options.inputFile}', () {
-    var currentDir = new Directory.current().path;
-    var compiler = new Compiler(fileSystem, options, currentDir);
-    return compiler.run().then((_) {
-      // Write out the code associated with each source file.
-      for (var file in compiler.output) {
-        writeFile(file.path, file.contents, options.clean);
-      }
-      return fileSystem.flush();
-    });
-  }, printTime: true);
+  _time('Total time spent on ${options.inputFile}', () {
+    _compile(options.inputFile, options.verbose);
+  }, true);
 }
 
-void writeFile(fs.Path path, String contents, bool clean) {
-  if (clean) {
-    File fileOut = new File.fromPath(_convert(path));
-    if (fileOut.existsSync()) {
-      fileOut.deleteSync();
-    }
-  } else {
-    _createIfNeeded(_convert(path.directoryPath));
-    fileSystem.writeString(path, contents);
+void _compile(String inputPath, bool verbose) {
+  var ext = path.extension(inputPath);
+  if (ext != '.css' && ext != '.scss') {
+    messages.error("Please provide a CSS/Sass entry point.", null);
+    return;
+  }
+  try {
+    // Read the file.
+    var filename = path.basename(inputPath);
+    var file = new SourceFile(inputPath,
+        source: new File(inputPath).readAsStringSync());
+
+    // Parse the CSS.
+    file.tree = _time('Parse $filename',
+        () => new Parser(file).parse(), verbose);
+
+    // Emit the processed CSS.
+    var emitter = new CssPrinter();
+    _time('Codegen $filename',
+        () => emitter.visitTree(file.tree, pretty: true), verbose);
+
+    // Dump the contents to a file.
+    var outPath = path.join(path.dirname(inputPath), '_$filename');
+    new File(outPath).writeAsStringSync(emitter.toString());
+  } catch (e) {
+    messages.error('error processing $inputPath. Original message:\n $e', null);
   }
 }
 
-void _createIfNeeded(Path outdir) {
-  if (outdir.isEmpty) return;
-  var outDirectory = new Directory.fromPath(outdir);
-  if (!outDirectory.existsSync()) {
-    _createIfNeeded(outdir.directoryPath);
-    outDirectory.createSync();
+_time(String message, callback(), bool printTime) {
+  final watch = new Stopwatch();
+  watch.start();
+  var result = callback();
+  watch.stop();
+  final duration = watch.elapsedMilliseconds;
+  if (printTime) {
+    _printMessage(message, duration);
   }
+  return result;
 }
 
-// TODO(sigmund): this conversion from dart:io paths to internal paths should
-// go away when dartbug.com/5818 is fixed.
-Path _convert(fs.Path path) => new Path(path.toString());
+void _printMessage(String message, int duration) {
+  var buf = new StringBuffer();
+  buf.add(message);
+  for (int i = message.length; i < 60; i++) buf.add(' ');
+  buf.add(' -- ');
+  if (duration < 10) buf.add(' ');
+  if (duration < 100) buf.add(' ');
+  buf..add(duration)..add(' ms');
+  print(buf.toString());
+}

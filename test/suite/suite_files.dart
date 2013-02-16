@@ -9,7 +9,6 @@ import 'dart:io';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/parser.dart';
 import 'package:unittest/unittest.dart';
-import 'package:unittest/vm_config.dart';
 import 'suite_options.dart';
 import '../testing.dart';
 

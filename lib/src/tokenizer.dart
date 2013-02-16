@@ -25,7 +25,6 @@ class Tokenizer extends TokenizerBase {
     switch (ch) {
       case TokenChar.NEWLINE:
       case TokenChar.RETURN:
-        _source.lineStarts.add(_startIndex);
         // TODO(terry): Can't fall-thru; analyzer warning w/o return.
         return finishWhitespace();
       case TokenChar.SPACE:

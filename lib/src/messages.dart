@@ -5,11 +5,10 @@
 library messages;
 
 import 'package:logging/logging.dart' show Level;
+import 'package:source_maps/span.dart' show Span;
 
 import 'package:csslib/parser.dart';
 
-import 'package:web_ui/src/file_system/path.dart';
-import 'package:web_ui/src/utils.dart';
 import 'options.dart';
 
 // TODO(terry): Remove the global messages, use some object that tracks
@@ -18,9 +17,14 @@ import 'options.dart';
 /** The global [Messages] for tracking info/warnings/messages. */
 Messages messages;
 
+// Color constants used for generating messages.
+final String GREEN_COLOR = '\u001b[32m';
+final String RED_COLOR = '\u001b[31m';
+final String MAGENTA_COLOR = '\u001b[35m';
+final String NO_COLOR = '\u001b[0m';
+
 /** Map between error levels and their display color. */
 final Map<Level, String> _ERROR_COLORS = (() {
-  // TODO(jmesserly): the SourceSpan printer does not use our colors.
   var colorsMap = new Map<Level, String>();
   colorsMap[Level.SEVERE] = RED_COLOR;
   colorsMap[Level.WARNING] = MAGENTA_COLOR;
@@ -32,25 +36,25 @@ final Map<Level, String> _ERROR_COLORS = (() {
 class Message {
   final Level level;
   final String message;
-  final SourceSpan span;
+  final Span span;
   final bool useColors;
 
-  Message(this.level, this.message, {SourceSpan span: null,
-      bool useColors: false}) : this.span = span, this.useColors = useColors;
+  Message(this.level, this.message, {Span span: null, bool useColors: false})
+      : this.span = span, this.useColors = useColors;
 
   String toString() {
     var output = new StringBuffer();
     bool colors = useColors && _ERROR_COLORS.containsKey(level);
-    if (colors) output.add(_ERROR_COLORS[level]);
+    var levelColor =  _ERROR_COLORS[level];
+    if (colors) output.add(levelColor);
     output..add(level.name)..add(' ');
     if (colors) output.add(NO_COLOR);
 
     if (span == null) {
-      if (span.file != null) output.add('${span.file}: ');
       output.add(message);
     } else {
-      output.add(span.toMessageString(
-          span.file.toString(), message, useColors: colors));
+      output.add(span.getLocationMessage(message, useColors: colors,
+          color: levelColor));
     }
 
     return output.toString();
@@ -74,8 +78,8 @@ class Messages {
   Messages({PreprocessorOptions options, this.printHandler: print})
       : options = options != null ? options : new PreprocessorOptions();
 
-  /** [message] is considered a compile-time CSS error. */
-  void error(String message, SourceSpan span) {
+  /** Report a compile-time CSS error. */
+  void error(String message, Span span) {
     var msg = new Message(Level.SEVERE, message, span: span,
         useColors: options.useColors);
 
@@ -84,8 +88,8 @@ class Messages {
     printHandler(msg);
   }
 
-  /** [message] is considered a type compile-time CSS warning. */
-  void warning(String message, SourceSpan span) {
+  /** Report a compile-time CSS warning. */
+  void warning(String message, Span span) {
     if (options.warningsAsErrors) {
       error(message, span);
     } else {
@@ -96,11 +100,8 @@ class Messages {
     }
   }
 
-  /**
-   * [message] at [file] will tell the user about what the compiler
-   * is doing.
-   */
-  void info(String message, SourceSpan span, {Path file}) {
+  /** Report and informational message about what the compiler is doing. */
+  void info(String message, Span span) {
     var msg = new Message(Level.INFO, message, span: span,
         useColors: options.useColors);
 

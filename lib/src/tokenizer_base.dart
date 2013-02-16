@@ -378,7 +378,7 @@ abstract class TokenizerBase {
     if (hexValue < 0xD800 || hexValue > 0xDFFF && hexValue <= 0xFFFF) {
       return hexValue;
     } else if (hexValue <= 0x10FFFF){
-      var span = new SourceSpan(_source, _startIndex, _startIndex + 1);
+      var span = _source.file.span(_startIndex, _startIndex + 1);
       messages.error('unicode values greater than 2 bytes not implemented yet',
           span);
       return -1;

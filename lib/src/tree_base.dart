@@ -9,7 +9,7 @@ part of visitor;
  */
 abstract class TreeNode {
   /** The source code this [TreeNode] represents. */
-  SourceSpan span;
+  Span span;
 
   TreeNode(this.span) {}
 
@@ -27,7 +27,7 @@ abstract class TreeNode {
 
 /** The base type for expressions. */
 abstract class Expression extends TreeNode {
-  Expression(SourceSpan span): super(span);
+  Expression(Span span): super(span);
 }
 
 /** Simple class to provide a textual dump of trees for debugging. */

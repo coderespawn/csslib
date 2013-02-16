@@ -4,6 +4,7 @@
 
 library visitor;
 
+import 'package:source_maps/span.dart' show Span;
 import 'parser.dart';
 
 part 'src/css_printer.dart';

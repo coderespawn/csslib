@@ -6,22 +6,18 @@ library validate;
 
 import 'package:csslib/parser.dart';
 import 'package:csslib/visitor.dart';
+import 'package:source_maps/span.dart' show Span;
 
 /** Can be thrown on any Css runtime problem includes source location. */
 class CssSelectorException implements Exception {
   final String _message;
-  final SourceSpan _location;
+  final Span _span;
 
-  CssSelectorException(this._message, [SourceSpan location])
-      : _location = location;
+  CssSelectorException(this._message, [this._span]);
 
   String toString() {
-    if (_location != null) {
-      return 'CssSelectorException: '
-          '${_location.toMessageString(_location.file.toString(), _message)}';
-    } else {
-      return 'CssSelectorException: $_message';
-    }
+    var msg = _span == null ? _message : _span.getLocationMessage(_message);
+    return 'CssSelectorException: $msg';
   }
 }
 

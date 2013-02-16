@@ -7,7 +7,7 @@ dependencies:
   args: any
   logging: any
   unittest: any
-  # TODO(terry): Bring in web_ui library for the file_system.  Should be
-  #              removed when the file_system is refactored out of web_ui.
-  #              See https://github.com/dart-lang/csslib/issues/6
-  web_ui: ">=0.3.2 <0.3.3"
+  pathos: any
+  source_maps: any
+  # used to parse test-suites code
+  html5lib: any

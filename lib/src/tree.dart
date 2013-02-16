@@ -11,7 +11,7 @@ part of visitor;
 class Identifier extends TreeNode {
   String name;
 
-  Identifier(this.name, SourceSpan span): super(span);
+  Identifier(this.name, Span span): super(span);
 
   visit(VisitorBase visitor) => visitor.visitIdentifier(this);
 
@@ -19,7 +19,7 @@ class Identifier extends TreeNode {
 }
 
 class Wildcard extends TreeNode {
-  Wildcard(SourceSpan span): super(span);
+  Wildcard(Span span): super(span);
   visit(VisitorBase visitor) => visitor.visitWildcard(this);
 }
 
@@ -27,20 +27,20 @@ class Wildcard extends TreeNode {
 class CssComment extends TreeNode {
   String comment;
 
-  CssComment(this.comment, SourceSpan span): super(span);
+  CssComment(this.comment, Span span): super(span);
   visit(VisitorBase visitor) => visitor.visitCssComment(this);
 }
 
 // CDO/CDC (Comment Definition Open <!-- and Comment Definition Close -->).
 class CommentDefinition extends CssComment {
-  CommentDefinition(String comment, SourceSpan span): super(comment, span);
+  CommentDefinition(String comment, Span span): super(comment, span);
   visit(VisitorBase visitor) => visitor.visitCommentDefinition(this);
 }
 
 class SelectorGroup extends TreeNode {
   List<Selector> _selectors;
 
-  SelectorGroup(this._selectors, SourceSpan span): super(span);
+  SelectorGroup(this._selectors, Span span): super(span);
 
   List<Selector> get selectors => _selectors;
 
@@ -50,7 +50,7 @@ class SelectorGroup extends TreeNode {
 class Selector extends TreeNode {
   List<SimpleSelectorSequence> _simpleSelectorSequences;
 
-  Selector(this._simpleSelectorSequences, SourceSpan span) : super(span);
+  Selector(this._simpleSelectorSequences, Span span) : super(span);
 
   List<SimpleSelectorSequence> get simpleSelectorSequences =>
       _simpleSelectorSequences;
@@ -69,7 +69,7 @@ class SimpleSelectorSequence extends TreeNode {
   int _combinator;              // +, >, ~, NONE
   SimpleSelector _selector;
 
-  SimpleSelectorSequence(this._selector, SourceSpan span,
+  SimpleSelectorSequence(this._selector, Span span,
       [int combinator = TokenKind.COMBINATOR_NONE])
       : _combinator = combinator, super(span);
 
@@ -84,9 +84,9 @@ class SimpleSelectorSequence extends TreeNode {
 
   String get _combinatorToString =>
       isCombinatorDescendant ? ' ' :
-      isCombinatorPlus ? ' + ' :
-      isCombinatorGreater ? ' > ' :
-      isCombinatorTilde ? ' ~ ' : '';
+          isCombinatorPlus ? ' + ' :
+              isCombinatorGreater ? ' > ' :
+                  isCombinatorTilde ? ' ~ ' : '';
 
   visit(VisitorBase visitor) => visitor.visitSimpleSelectorSequence(this);
 }
@@ -97,7 +97,7 @@ class SimpleSelectorSequence extends TreeNode {
 class SimpleSelector extends TreeNode {
   var _name;
 
-  SimpleSelector(this._name, SourceSpan span) : super(span);
+  SimpleSelector(this._name, Span span) : super(span);
 
   // Name can be an Identifier or WildCard we'll return either the name or '*'.
   String get name => isWildcard ? '*' : _name.name;
@@ -109,7 +109,7 @@ class SimpleSelector extends TreeNode {
 
 // element name
 class ElementSelector extends SimpleSelector {
-  ElementSelector(name, SourceSpan span) : super(name, span);
+  ElementSelector(name, Span span) : super(name, span);
   visit(VisitorBase visitor) => visitor.visitElementSelector(this);
 }
 
@@ -117,11 +117,10 @@ class ElementSelector extends SimpleSelector {
 class NamespaceSelector extends SimpleSelector {
   var _namespace;           // null, Wildcard or Identifier
 
-  NamespaceSelector(this._namespace, var name, SourceSpan span) :
-      super(name, span);
+  NamespaceSelector(this._namespace, var name, Span span) : super(name, span);
 
-  String get namespace => _namespace is Wildcard ? '*' :
-      _namespace == null ? '' : _namespace.name;
+  String get namespace =>
+      _namespace is Wildcard ? '*' : _namespace == null ? '' : _namespace.name;
 
   bool get isNamespaceWildcard => _namespace is Wildcard;
 
@@ -136,7 +135,7 @@ class AttributeSelector extends SimpleSelector {
   var _value;
 
   AttributeSelector(Identifier name, this._op, this._value,
-      SourceSpan span) : super(name, span);
+      Span span) : super(name, span);
 
   String matchOperator() {
     switch (_op) {
@@ -192,32 +191,32 @@ class AttributeSelector extends SimpleSelector {
 
 // #id
 class IdSelector extends SimpleSelector {
-  IdSelector(Identifier name, SourceSpan span) : super(name, span);
+  IdSelector(Identifier name, Span span) : super(name, span);
   visit(VisitorBase visitor) => visitor.visitIdSelector(this);
 }
 
 // .class
 class ClassSelector extends SimpleSelector {
-  ClassSelector(Identifier name, SourceSpan span) : super(name, span);
+  ClassSelector(Identifier name, Span span) : super(name, span);
   visit(VisitorBase visitor) => visitor.visitClassSelector(this);
 }
 
 // :pseudoClass
 class PseudoClassSelector extends SimpleSelector {
-  PseudoClassSelector(Identifier name, SourceSpan span) : super(name, span);
+  PseudoClassSelector(Identifier name, Span span) : super(name, span);
   visit(VisitorBase visitor) => visitor.visitPseudoClassSelector(this);
 }
 
 // ::pseudoElement
 class PseudoElementSelector extends SimpleSelector {
-  PseudoElementSelector(Identifier name, SourceSpan span) : super(name, span);
+  PseudoElementSelector(Identifier name, Span span) : super(name, span);
   visit(VisitorBase visitor) => visitor.visitPseudoElementSelector(this);
 }
 
 // TODO(terry): Implement
 // NOT
 class NotSelector extends SimpleSelector {
-  NotSelector(String name, SourceSpan span) : super(name, span);
+  NotSelector(String name, Span span) : super(name, span);
 
   visit(VisitorBase visitor) => visitor.visitNotSelector(this);
 }
@@ -228,14 +227,14 @@ class StyleSheet extends TreeNode {
    */
   var _topLevels;
 
-  StyleSheet(this._topLevels, SourceSpan span) : super(span) {
+  StyleSheet(this._topLevels, Span span) : super(span) {
     for (final node in _topLevels) {
       assert(node is TopLevelProduction || node is Directive);
     }
   }
 
   /** Selectors only in this tree. */
-  StyleSheet.selector(this._topLevels, SourceSpan span) : super(span);
+  StyleSheet.selector(this._topLevels, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitStyleSheet(this);
 
@@ -243,7 +242,7 @@ class StyleSheet extends TreeNode {
 }
 
 class TopLevelProduction extends TreeNode {
-  TopLevelProduction(SourceSpan span) : super(span);
+  TopLevelProduction(Span span) : super(span);
   visit(VisitorBase visitor) => visitor.visitTopLevelProduction(this);
 }
 
@@ -251,8 +250,7 @@ class RuleSet extends TopLevelProduction {
   SelectorGroup _selectorGroup;
   DeclarationGroup _declarationGroup;
 
-  RuleSet(this._selectorGroup, this._declarationGroup, SourceSpan span) :
-      super(span);
+  RuleSet(this._selectorGroup, this._declarationGroup, Span span) : super(span);
 
   SelectorGroup get selectorGroup => _selectorGroup;
   DeclarationGroup get declarationGroup => _declarationGroup;
@@ -261,7 +259,7 @@ class RuleSet extends TopLevelProduction {
 }
 
 class Directive extends TreeNode {
-  Directive(SourceSpan span) : super(span);
+  Directive(Span span) : super(span);
 
   bool get isBuiltIn => true;       // Known CSS directive?
   bool get isExtension => false;    // SCSS extension?
@@ -273,8 +271,7 @@ class ImportDirective extends Directive {
   String _import;
   List<Identifier> _media;
 
-  ImportDirective(this._import, this._media, SourceSpan span) :
-      super(span);
+  ImportDirective(this._import, this._media, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitImportDirective(this);
 }
@@ -283,8 +280,7 @@ class MediaDirective extends Directive {
   List<Identifier> media;
   RuleSet ruleset;
 
-  MediaDirective(this.media, this.ruleset, SourceSpan span) :
-      super(span);
+  MediaDirective(this.media, this.ruleset, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitMediaDirective(this);
 }
@@ -295,7 +291,7 @@ class PageDirective extends Directive {
   List<DeclarationGroup> _declsMargin;
 
   PageDirective(this._ident, this._pseudoPage, this._declsMargin,
-      SourceSpan span) : super(span);
+      Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitPageDirective(this);
 
@@ -307,8 +303,7 @@ class KeyFrameDirective extends Directive {
   var _name;
   List<KeyFrameBlock> _blocks;
 
-  KeyFrameDirective(this._name, SourceSpan span) :
-      _blocks = [], super(span);
+  KeyFrameDirective(this._name, Span span) : _blocks = [], super(span);
 
   add(KeyFrameBlock block) {
     _blocks.add(block);
@@ -323,8 +318,8 @@ class KeyFrameBlock extends Expression {
   Expressions _blockSelectors;
   DeclarationGroup _declarations;
 
-  KeyFrameBlock(this._blockSelectors, this._declarations, SourceSpan span):
-      super(span);
+  KeyFrameBlock(this._blockSelectors, this._declarations, Span span)
+      : super(span);
 
   visit(VisitorBase visitor) => visitor.visitKeyFrameBlock(this);
 }
@@ -333,7 +328,7 @@ class KeyFrameBlock extends Expression {
 class FontFaceDirective extends Directive {
   List<Declaration> _declarations;
 
-  FontFaceDirective(this._declarations, SourceSpan span) : super(span);
+  FontFaceDirective(this._declarations, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitFontFaceDirective(this);
 }
@@ -342,8 +337,7 @@ class IncludeDirective extends Directive {
   String _include;
   StyleSheet _stylesheet;
 
-  IncludeDirective(this._include, this._stylesheet, SourceSpan span) :
-      super(span);
+  IncludeDirective(this._include, this._stylesheet, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitIncludeDirective(this);
 
@@ -357,8 +351,7 @@ class StyletDirective extends Directive {
   String _dartClassName;
   List<RuleSet> _rulesets;
 
-  StyletDirective(this._dartClassName, this._rulesets, SourceSpan span) :
-      super(span);
+  StyletDirective(this._dartClassName, this._rulesets, Span span) : super(span);
 
   bool get isBuiltIn => false;
   bool get isExtension => true;
@@ -376,8 +369,7 @@ class NamespaceDirective extends Directive {
   /** URI associated with this namespace. */
   String _uri;
 
-  NamespaceDirective(this._prefix, this._uri, SourceSpan span) :
-      super(span);
+  NamespaceDirective(this._prefix, this._uri, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitNamespaceDirective(this);
 
@@ -391,8 +383,8 @@ class Declaration extends TreeNode {
   var _dart;
   bool _important;
 
-  Declaration(this._property, this._expression, this._dart, SourceSpan span) :
-      _important = false, super(span);
+  Declaration(this._property, this._expression, this._dart, Span span)
+      : _important = false, super(span);
 
   String get property => _property.name;
   Expression get expression => _expression;
@@ -412,7 +404,7 @@ class Declaration extends TreeNode {
 class DeclarationGroup extends TreeNode {
   List<Declaration> _declarations;
 
-  DeclarationGroup(this._declarations, SourceSpan span) : super(span);
+  DeclarationGroup(this._declarations, Span span) : super(span);
 
   List<Declaration> get declarations => _declarations;
 
@@ -422,18 +414,18 @@ class DeclarationGroup extends TreeNode {
 class MarginGroup extends DeclarationGroup {
   int margin_sym;       // TokenType for for @margin sym.
 
-  MarginGroup(this.margin_sym, List<Declaration> decls, SourceSpan span)
+  MarginGroup(this.margin_sym, List<Declaration> decls, Span span)
       : super(decls, span);
   visit(VisitorBase visitor) => visitor.visitMarginGroup(this);
 }
 
 class OperatorSlash extends Expression {
-  OperatorSlash(SourceSpan span) : super(span);
+  OperatorSlash(Span span) : super(span);
   visit(VisitorBase visitor) => visitor.visitOperatorSlash(this);
 }
 
 class OperatorComma extends Expression {
-  OperatorComma(SourceSpan span) : super(span);
+  OperatorComma(Span span) : super(span);
   visit(VisitorBase visitor) => visitor.visitOperatorComma(this);
 }
 
@@ -441,7 +433,7 @@ class LiteralTerm extends Expression {
   var _value;
   String _text;
 
-  LiteralTerm(this._value, this._text, SourceSpan span) : super(span);
+  LiteralTerm(this._value, this._text, Span span) : super(span);
 
   get value => _value;
   String get text => _text;
@@ -450,15 +442,14 @@ class LiteralTerm extends Expression {
 }
 
 class NumberTerm extends LiteralTerm {
-  NumberTerm(value, String t, SourceSpan span) : super(value, t, span);
+  NumberTerm(value, String t, Span span) : super(value, t, span);
   visit(VisitorBase visitor) => visitor.visitNumberTerm(this);
 }
 
 class UnitTerm extends LiteralTerm {
   int _unit;
 
-  UnitTerm(value, String t, SourceSpan span, this._unit) :
-      super(value, t, span);
+  UnitTerm(value, String t, Span span, this._unit) : super(value, t, span);
 
   int get unit => _unit;
 
@@ -470,7 +461,7 @@ class UnitTerm extends LiteralTerm {
 }
 
 class LengthTerm extends UnitTerm {
-  LengthTerm(value, String t, SourceSpan span,
+  LengthTerm(value, String t, Span span,
       [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(this._unit == TokenKind.UNIT_LENGTH_PX ||
         this._unit == TokenKind.UNIT_LENGTH_CM ||
@@ -484,22 +475,22 @@ class LengthTerm extends UnitTerm {
 }
 
 class PercentageTerm extends LiteralTerm {
-  PercentageTerm(value, String t, SourceSpan span) : super(value, t, span);
+  PercentageTerm(value, String t, Span span) : super(value, t, span);
   visit(VisitorBase visitor) => visitor.visitPercentageTerm(this);
 }
 
 class EmTerm extends LiteralTerm {
-  EmTerm(value, String t, SourceSpan span) : super(value, t, span);
+  EmTerm(value, String t, Span span) : super(value, t, span);
   visit(VisitorBase visitor) => visitor.visitEmTerm(this);
 }
 
 class ExTerm extends LiteralTerm {
-  ExTerm(value, String t, SourceSpan span) : super(value, t, span);
+  ExTerm(value, String t, Span span) : super(value, t, span);
   visit(VisitorBase visitor) => visitor.visitExTerm(this);
 }
 
 class AngleTerm extends UnitTerm {
-  AngleTerm(var value, String t, SourceSpan span,
+  AngleTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(this._unit == TokenKind.UNIT_ANGLE_DEG ||
         this._unit == TokenKind.UNIT_ANGLE_RAD ||
@@ -511,7 +502,7 @@ class AngleTerm extends UnitTerm {
 }
 
 class TimeTerm extends UnitTerm {
-  TimeTerm(var value, String t, SourceSpan span,
+  TimeTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(this._unit == TokenKind.UNIT_ANGLE_DEG ||
         this._unit == TokenKind.UNIT_TIME_MS ||
@@ -522,7 +513,7 @@ class TimeTerm extends UnitTerm {
 }
 
 class FreqTerm extends UnitTerm {
-  FreqTerm(var value, String t, SourceSpan span,
+  FreqTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(_unit == TokenKind.UNIT_FREQ_HZ || _unit == TokenKind.UNIT_FREQ_KHZ);
   }
@@ -531,20 +522,19 @@ class FreqTerm extends UnitTerm {
 }
 
 class FractionTerm extends LiteralTerm {
-  FractionTerm(var value, String t, SourceSpan span) :
-    super(value, t, span);
+  FractionTerm(var value, String t, Span span) : super(value, t, span);
 
   visit(VisitorBase visitor) => visitor.visitFractionTerm(this);
 }
 
 class UriTerm extends LiteralTerm {
-  UriTerm(String value, SourceSpan span) : super(value, value, span);
+  UriTerm(String value, Span span) : super(value, value, span);
 
   visit(VisitorBase visitor) => visitor.visitUriTerm(this);
 }
 
 class ResolutionTerm extends UnitTerm {
-  ResolutionTerm(var value, String t, SourceSpan span,
+  ResolutionTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(_unit == TokenKind.UNIT_RESOLUTION_DPI ||
         _unit == TokenKind.UNIT_RESOLUTION_DPCM ||
@@ -555,7 +545,7 @@ class ResolutionTerm extends UnitTerm {
 }
 
 class ChTerm extends UnitTerm {
-  ChTerm(var value, String t, SourceSpan span,
+  ChTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(_unit == TokenKind.UNIT_CH);
   }
@@ -564,7 +554,7 @@ class ChTerm extends UnitTerm {
 }
 
 class RemTerm extends UnitTerm {
-  RemTerm(var value, String t, SourceSpan span,
+  RemTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(_unit == TokenKind.UNIT_REM);
   }
@@ -573,7 +563,7 @@ class RemTerm extends UnitTerm {
 }
 
 class ViewportTerm extends UnitTerm {
-  ViewportTerm(var value, String t, SourceSpan span,
+  ViewportTerm(var value, String t, Span span,
     [int unit = TokenKind.UNIT_LENGTH_PX]) : super(value, t, span, unit) {
     assert(_unit == TokenKind.UNIT_VIEWPORT_VW ||
         _unit == TokenKind.UNIT_VIEWPORT_VH ||
@@ -588,8 +578,7 @@ class ViewportTerm extends UnitTerm {
 class BAD_HEX_VALUE { }
 
 class HexColorTerm extends LiteralTerm {
-  HexColorTerm(var value, String t, SourceSpan span) :
-      super(value, t, span);
+  HexColorTerm(var value, String t, Span span) : super(value, t, span);
 
   visit(VisitorBase visitor) => visitor.visitHexColorTerm(this);
 }
@@ -597,7 +586,7 @@ class HexColorTerm extends LiteralTerm {
 class FunctionTerm extends LiteralTerm {
   Expressions _params;
 
-  FunctionTerm(var value, String t, this._params, SourceSpan span)
+  FunctionTerm(var value, String t, this._params, Span span)
       : super(value, t, span);
 
   visit(VisitorBase visitor) => visitor.visitFunctionTerm(this);
@@ -606,7 +595,7 @@ class FunctionTerm extends LiteralTerm {
 class GroupTerm extends Expression {
   List<LiteralTerm> _terms;
 
-  GroupTerm(SourceSpan span) : _terms =  [], super(span);
+  GroupTerm(Span span) : _terms =  [], super(span);
 
   add(LiteralTerm term) {
     _terms.add(term);
@@ -616,7 +605,7 @@ class GroupTerm extends Expression {
 }
 
 class ItemTerm extends NumberTerm {
-  ItemTerm(var value, String t, SourceSpan span) : super(value, t, span);
+  ItemTerm(var value, String t, Span span) : super(value, t, span);
 
   visit(VisitorBase visitor) => visitor.visitItemTerm(this);
 }
@@ -624,7 +613,7 @@ class ItemTerm extends NumberTerm {
 class Expressions extends Expression {
   List<Expression> _expressions;
 
-  Expressions(SourceSpan span): super(span), _expressions = [];
+  Expressions(Span span): super(span), _expressions = [];
 
   add(Expression expression) {
     _expressions.add(expression);
@@ -640,7 +629,7 @@ class BinaryExpression extends Expression {
   Expression x;
   Expression y;
 
-  BinaryExpression(this.op, this.x, this.y, SourceSpan span): super(span);
+  BinaryExpression(this.op, this.x, this.y, Span span): super(span);
 
   visit(VisitorBase visitor) => visitor.visitBinaryExpression(this);
 }
@@ -649,7 +638,7 @@ class UnaryExpression extends Expression {
   Token op;
   Expression self;
 
-  UnaryExpression(this.op, this.self, SourceSpan span): super(span);
+  UnaryExpression(this.op, this.self, Span span): super(span);
 
   visit(VisitorBase visitor) => visitor.visitUnaryExpression(this);
 }
@@ -666,7 +655,7 @@ abstract class DartStyleExpression extends TreeNode {
   int _styleType;
   int priority;
 
-  DartStyleExpression(this._styleType, SourceSpan span) : super(span);
+  DartStyleExpression(this._styleType, Span span) : super(span);
 
   /*
    * Merges give 2 DartStyleExpression (or derived from DartStyleExpression,
@@ -693,9 +682,9 @@ class FontExpression extends DartStyleExpression {
   Font font;
 
   //   font-style font-variant font-weight font-size/line-height font-family
-  FontExpression(SourceSpan span, {var size, List<String>family,
-      int weight, String style, String variant, LineHeight lineHeight}) :
-      super(DartStyleExpression.fontStyle, span) {
+  FontExpression(Span span, {var size, List<String>family,
+      int weight, String style, String variant, LineHeight lineHeight})
+      : super(DartStyleExpression.fontStyle, span) {
     // TODO(terry): Only px/pt for now need to handle all possible units to
     //              support calc expressions on units.
     font = new Font(size : size is LengthTerm ? size.value : size,
@@ -718,9 +707,9 @@ class FontExpression extends DartStyleExpression {
     return new FontExpression._merge(x, y, y.span);
   }
 
-  FontExpression._merge(FontExpression x, FontExpression y, SourceSpan span) :
-      super(DartStyleExpression.fontStyle, span),
-      font = new Font.merge(x.font, y.font);
+  FontExpression._merge(FontExpression x, FontExpression y, Span span)
+      : super(DartStyleExpression.fontStyle, span),
+        font = new Font.merge(x.font, y.font);
 
   visit(VisitorBase visitor) => visitor.visitFontExpression(this);
 }
@@ -728,8 +717,8 @@ class FontExpression extends DartStyleExpression {
 abstract class BoxExpression extends DartStyleExpression {
   BoxEdge boxEdge;
 
-  BoxExpression(int styleType, SourceSpan span, this.boxEdge) :
-      super(styleType, span);
+  BoxExpression(int styleType, Span span, this.boxEdge)
+      : super(styleType, span);
 
   /*
    * Merges give 2 DartStyleExpression (or derived from DartStyleExpression,
@@ -757,12 +746,12 @@ abstract class BoxExpression extends DartStyleExpression {
 class MarginExpression extends BoxExpression {
   // TODO(terry): Does auto for margin need to be exposed to Dart UI framework?
   /** Margin expression ripped apart. */
-  MarginExpression(SourceSpan span, {num top, num right, num bottom, num left})
+  MarginExpression(Span span, {num top, num right, num bottom, num left})
       : super(DartStyleExpression.marginStyle, span,
               new BoxEdge(left, top, right, bottom));
 
-  MarginExpression.boxEdge(SourceSpan span, BoxEdge box) :
-      super(DartStyleExpression.marginStyle, span, box);
+  MarginExpression.boxEdge(Span span, BoxEdge box)
+      : super(DartStyleExpression.marginStyle, span, box);
 
   merged(MarginExpression newMarginExpr) {
     if (this.isMargin && newMarginExpr.isMargin) {
@@ -779,20 +768,19 @@ class MarginExpression extends BoxExpression {
     return new MarginExpression._merge(x, y, y.span);
   }
 
-  MarginExpression._merge(MarginExpression x, MarginExpression y,
-      SourceSpan span) :
-      super(x._styleType, span, new BoxEdge.merge(x.boxEdge, y.boxEdge));
+  MarginExpression._merge(MarginExpression x, MarginExpression y, Span span)
+      : super(x._styleType, span, new BoxEdge.merge(x.boxEdge, y.boxEdge));
 
   visit(VisitorBase visitor) => visitor.visitMarginExpression(this);
 }
 
 class BorderExpression extends BoxExpression {
   /** Border expression ripped apart. */
-  BorderExpression(SourceSpan span, {num top, num right, num bottom, num left})
+  BorderExpression(Span span, {num top, num right, num bottom, num left})
       : super(DartStyleExpression.borderStyle, span,
               new BoxEdge(left, top, right, bottom));
 
-  BorderExpression.boxEdge(SourceSpan span, BoxEdge box)
+  BorderExpression.boxEdge(Span span, BoxEdge box)
       : super(DartStyleExpression.borderStyle, span, box);
 
   merged(BorderExpression newBorderExpr) {
@@ -811,7 +799,7 @@ class BorderExpression extends BoxExpression {
   }
 
   BorderExpression._merge(BorderExpression x, BorderExpression y,
-      SourceSpan span)
+      Span span)
       : super(DartStyleExpression.borderStyle, span,
               new BoxEdge.merge(x.boxEdge, y.boxEdge));
 
@@ -821,8 +809,8 @@ class BorderExpression extends BoxExpression {
 class HeightExpression extends DartStyleExpression {
   var height;
 
-  HeightExpression(SourceSpan span, this.height) :
-      super(DartStyleExpression.heightStyle, span);
+  HeightExpression(Span span, this.height)
+      : super(DartStyleExpression.heightStyle, span);
 
   merged(HeightExpression newHeightExpr) {
     if (this.isHeight && newHeightExpr.isHeight) {
@@ -838,8 +826,8 @@ class HeightExpression extends DartStyleExpression {
 class WidthExpression extends DartStyleExpression {
   var width;
 
-  WidthExpression(SourceSpan span, this.width) :
-      super(DartStyleExpression.widthStyle, span);
+  WidthExpression(Span span, this.width)
+      : super(DartStyleExpression.widthStyle, span);
 
   merged(WidthExpression newWidthExpr) {
     if (this.isWidth && newWidthExpr.isWidth) {
@@ -854,11 +842,11 @@ class WidthExpression extends DartStyleExpression {
 
 class PaddingExpression extends BoxExpression {
   /** Padding expression ripped apart. */
-  PaddingExpression(SourceSpan span, {num top, num right, num bottom, num left})
+  PaddingExpression(Span span, {num top, num right, num bottom, num left})
       : super(DartStyleExpression.paddingStyle, span,
               new BoxEdge(left, top, right, bottom));
 
-  PaddingExpression.boxEdge(SourceSpan span, BoxEdge box)
+  PaddingExpression.boxEdge(Span span, BoxEdge box)
       : super(DartStyleExpression.paddingStyle, span, box);
 
   merged(PaddingExpression newPaddingExpr) {
@@ -876,9 +864,8 @@ class PaddingExpression extends BoxExpression {
     return new PaddingExpression._merge(x, y, y.span);
   }
 
-  PaddingExpression._merge(PaddingExpression x, PaddingExpression y,
-      SourceSpan span) :
-      super(DartStyleExpression.paddingStyle, span,
+  PaddingExpression._merge(PaddingExpression x, PaddingExpression y, Span span)
+      : super(DartStyleExpression.paddingStyle, span,
             new BoxEdge.merge(x.boxEdge, y.boxEdge));
 
   visit(VisitorBase visitor) => visitor.visitPaddingExpression(this);

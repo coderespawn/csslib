@@ -4,10 +4,11 @@
 
 library parser;
 
+import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:web_ui/src/file_system/path.dart';
-import 'package:web_ui/src/utils.dart';
+import 'package:pathos/path.dart' as path;
+import 'package:source_maps/span.dart' show Span;
 
 import "visitor.dart";
 import 'src/files.dart';
@@ -28,10 +29,6 @@ part 'src/tokenkind.dart';
 StyleSheet parse(var input, {List errors, List options}) {
   var source = _inputAsString(input);
 
-  // If input is Path we load the file.  filePath of null implies loaded from
-  // memory.
-  var filePath = (input is Path) ? new Path.fromNative(input) : null;
-
   if (errors == null) {
     errors = [];
   }
@@ -40,12 +37,8 @@ StyleSheet parse(var input, {List errors, List options}) {
     options = ['--no-colors', 'memory'];
   }
   var opt = PreprocessorOptions.parse(options);
-  messages = new Messages(options: opt, printHandler: (Object obj) {
-    errors.add(obj);
-  });
-
-  var p = new Parser(new SourceFile(filePath, source: source));
-  return p.parse();
+  messages = new Messages(options: opt, printHandler: errors.add);
+  return new Parser(new SourceFile(null, source: source)).parse();
 }
 
 /**
@@ -66,8 +59,7 @@ StyleSheet selector(var input, {List errors}) {
     errors.add(obj);
   });
 
-  var p = new Parser(new SourceFile(new Path.fromNative(source),
-      source: source));
+  var p = new Parser(new SourceFile(null, source: source));
   return p.parseSelector();
 }
 
@@ -103,61 +95,13 @@ String _inputAsString(var input) {
 }
 
 /**
- * A range of characters in a [SourceFile].  Used to represent the source
- * positions of [Token]s and [TreeNode]s for error reporting or other tooling
- * work.
- */
-class SourceSpan implements Comparable {
-  /** The [SourceFile] that contains this span. */
-  final SourceFile file;
-
-  /** The character position of the start of this span. */
-  final int start;
-
-  /** The character position of the end of this span. */
-  final int end;
-
-  SourceSpan(this.file, this.start, this.end);
-
-  /** Returns the source text corresponding to this [Span]. */
-  String get text => file.text.substring(start, end);
-
-  String toMessageString(String filename, String message,
-        {bool useColors: false}) {
-    return file.getLocationMessage(filename, message, start, end,
-        useColors: useColors);
-  }
-
-  int get line => file.getLine(start);
-  int get column => file.getColumn(line, start);
-  int get endLine => file.getLine(end);
-  int get endColumn => file.getColumn(endLine, end);
-
-  String get locationText {
-    var line = file.getLine(start);
-    var column = file.getColumn(line, start);
-    return '${file.path.toString()}:${line + 1}:${column + 1}';
-  }
-
-  /** Compares two source spans by file and position. Handles nulls. */
-  int compareTo(SourceSpan other) {
-    if (file == other.file) {
-      int d = start - other.start;
-      return d == 0 ? (end - other.end) : d;
-    }
-    return file.compareTo(other.file);
-  }
-}
-
-/**
  * A simple recursive descent parser for CSS.
  */
 class Parser {
-  Path _mainPath;
+  String _mainPath;
 
   Tokenizer tokenizer;
 
-  var _fs;                        // If non-null filesystem to read files.
   String _basePath;               // Base path of CSS file.
 
   final SourceFile source;
@@ -165,8 +109,8 @@ class Parser {
   Token _previousToken;
   Token _peekToken;
 
-  Parser(this.source, [int start = 0, fs, String basePath])
-      : _fs = fs, _basePath = basePath {
+  Parser(this.source, [int start = 0, String basePath])
+      : _basePath = basePath {
     tokenizer = new Tokenizer(source, true, start);
     _peekToken = tokenizer.next();
   }
@@ -281,29 +225,25 @@ class Parser {
     _error(message, tok.span);
   }
 
-  void _error(String message, SourceSpan location) {
+  void _error(String message, Span location) {
     if (location == null) {
       location = _peekToken.span;
     }
-
-    // syntax errors are fatal for now
-    // TODO(terry): Bad warning 'SourceSpan' is not assignable to 'SourceSpan'
-    //              from analyzer b/###
     messages.error(message, location);
   }
 
-  void _warning(String message, SourceSpan location) {
+  void _warning(String message, Span location) {
     if (location == null) {
       location = _peekToken.span;
     }
-
-    // TODO(terry): Bad warning 'SourceSpan' is not assignable to 'SourceSpan'
-    //              from analyzer b/###
     messages.warning(message, location);
   }
 
-  SourceSpan _makeSpan(int start) {
-    return new SourceSpan(source, start, _previousToken.end);
+  Span _makeSpan(int start) {
+    // TODO(terry): there are places where we are creating spans before we eat
+    // the tokens, so using _previousToken.end is not always valid.
+    var end = _previousToken.end >= start ? _previousToken.end : _peekToken.end;
+    return source.file.span(start, end);
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -544,26 +484,23 @@ class Parser {
       case TokenKind.DIRECTIVE_INCLUDE:
         _next();
         String filename = processQuotedString(false);
-        if (_fs != null) {
-          // Does CSS file exist?
-          if (_fs.fileExists('${_basePath}${filename}')) {
-            String basePath = "";
-            int idx = filename.lastIndexOf('/');
-            if (idx >= 0) {
-              basePath = filename.substring(0, idx + 1);
-            }
-            basePath = '${_basePath}${basePath}';
-            // Yes, let's parse this file as well.
-            String fullFN = '${basePath}${filename}';
-            String contents = _fs.readAll(fullFN);
-            Parser parser = new Parser(new SourceFile(
-                new Path(fullFN), source: contents), 0, _fs, basePath);
-            StyleSheet stylesheet = parser.parse();
-            return new IncludeDirective(filename, stylesheet, _makeSpan(start));
-          }
-
-          _error('file doesn\'t exist ${filename}', _peekToken.span);
+        // Does CSS file exist?
+        // TODO(sigmund,terry): this code seemed to be broken and unreachable
+        // (there was no fileExist or readAll methods defined anywhere in the
+        // original code).
+        if (new File(path.join(_basePath, filename)).existsSync()) {
+          var dir = path.dirname(filename);
+          var basePath = path.join(_basePath, dir);
+          // Yes, let's parse this file as well.
+          var fullFN = path.join(basePath, filename);
+          var contents = new File(fullFN).readAsStringSync();
+          Parser parser = new Parser(
+              new SourceFile(fullFN, source: contents), 0, basePath);
+          StyleSheet stylesheet = parser.parse();
+          return new IncludeDirective(filename, stylesheet, _makeSpan(start));
         }
+
+        _error('file doesn\'t exist $filename', _peekToken.span);
 
         print("WARNING: @include doesn't work for uitest");
         return new IncludeDirective(filename, null, _makeSpan(start));
@@ -1763,19 +1700,19 @@ class Parser {
     }
   }
 
-  HexColorTerm _parseHex(String hexText, SourceSpan start) {
+  HexColorTerm _parseHex(String hexText, Span span) {
     int hexValue = 0;
 
      for (int i = 0; i < hexText.length; i++) {
       var digit = _hexDigit(hexText.codeUnitAt(i));
       if (digit < 0) {
-        _warning('Bad hex number', start);
-        return new HexColorTerm(new BAD_HEX_VALUE(), hexText, start);
+        _warning('Bad hex number', span);
+        return new HexColorTerm(new BAD_HEX_VALUE(), hexText, span);
       }
       hexValue = (hexValue << 4) + digit;
     }
 
-    return new HexColorTerm(hexValue, hexText, start);
+    return new HexColorTerm(hexValue, hexText, span);
   }
 }
 

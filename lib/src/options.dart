@@ -22,20 +22,11 @@ class PreprocessorOptions {
   /** True to show warning messages for bad CSS.  The '--checked' flag. */
   final bool checked;
 
-  /** Remove any generated files. */
-  final bool clean;
-
   /** Whether to use colors to print messages on the terminal. */
   final bool useColors;
 
   /** File to process by the compiler. */
   String inputFile;
-
-  /** Directory where all sources are found. */
-  final String baseDir;
-
-  /** Directory where all output will be generated. */
-  final String outputDir;
 
   // We could make this faster, if it ever matters.
   factory PreprocessorOptions() => parse(['']);
@@ -46,21 +37,12 @@ class PreprocessorOptions {
       throwOnErrors = args['throw_on_errors'],
       verbose = args['verbose'],
       checked = args['checked'],
-      clean = args['clean'],
       useColors = args['colors'],
-      baseDir = args['basedir'],
-      outputDir = args['out'],
       inputFile = args.rest.length > 0 ? args.rest[0] : null;
 
   // tool.dart [options...] <css file>
   static PreprocessorOptions parse(List<String> arguments) {
     var parser = new ArgParser()
-      ..addFlag('clean', help: 'Remove all generated files', defaultsTo: false,
-          negatable: false)
-      ..addOption('out', abbr: 'o', help: 'Directory location to generate files'
-          ' (defaults to the same directory as the source file)')
-      ..addOption('basedir', help: 'Base directory location to find all source '
-          'files (defaults to the source file\'s directory)')
       ..addFlag('verbose', abbr: 'v', defaultsTo: false, negatable: false,
           help: 'Display detail info')
       ..addFlag('checked', defaultsTo: false, negatable: false,

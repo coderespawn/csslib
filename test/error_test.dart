@@ -27,10 +27,9 @@ void testUnsupportedFontWeights() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:29)
+SEVERE :1:24: Unknown property value bolder
 .foobar { font-weight: bolder; }
-                       ^^^^^^ Unknown property value bolder
-''');
+                       ^^^^^^''');
   expect(stylesheet != null, true);
 
   expect(prettyPrint(stylesheet), r'''
@@ -46,10 +45,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:29)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
+SEVERE :1:24: Unknown property value lighter
 .foobar { font-weight: lighter; }
-                       ^^^^^^^ Unknown property value lighter
-''');
+                       ^^^^^^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -64,10 +62,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
+SEVERE :1:24: Unknown property value inherit
 .foobar { font-weight: inherit; }
-                       ^^^^^^^ Unknown property value inherit
-''');
+                       ^^^^^^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -88,10 +85,9 @@ void testUnsupportedLineHeights() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:26)
+SEVERE :1:24: Unexpected value for line-height
 .foobar { line-height: 120%; }
-                       ^^^ Unexpected value for line-height
-''');
+                       ^^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -106,10 +102,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:26)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:25)
+SEVERE :1:24: Unexpected unit for line-height
 .foobar { line-height: 20cm; }
-                       ^^ Unexpected unit for line-height
-''');
+                       ^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -124,10 +119,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 23:25)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 23:30)
+SEVERE :1:24: Unknown property value inherit
 .foobar { line-height: inherit; }
-                       ^^^^^^^ Unknown property value inherit
-''');
+                       ^^^^^^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -145,10 +139,9 @@ void testBadSelectors() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 0:1)
+SEVERE :1:1: Not a valid ID selector expected #id
 # foo { color: #ff00ff; }
-^ Not a valid ID selector expected #id
-''');
+^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 # foo {
@@ -162,10 +155,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 0:1)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 0:1)
+SEVERE :1:1: Not a valid class selector expected .className
 . foo { color: #ff00ff; }
-^ Not a valid class selector expected .className
-''');
+^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 . foo {
@@ -183,10 +175,9 @@ void testBadHexValues() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
+SEVERE :1:18: Bad hex number
 .foobar { color: #AH787; }
-                 ^^^^^^ Bad hex number
-''');
+                 ^^^^^^''');
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 .foobar {
@@ -200,10 +191,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
+SEVERE :1:18: Unknown property value redder
 .foobar { color: redder; }
-                 ^^^^^^ Unknown property value redder
-''');
+                 ^^^^^^''');
 
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
@@ -218,10 +208,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:23)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
+SEVERE :1:18: Expected hex number
 .foobar { color: # ffffff; }
-                 ^ Expected hex number
-''');
+                 ^''');
 
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
@@ -236,10 +225,9 @@ SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE <#SourceFile MEMORY> @ line 1 (column 17:18)
+SEVERE :1:18: Expected hex number
 .foobar { color: # 123fff; }
-                 ^ Expected hex number
-''');
+                 ^''');
 
   expect(stylesheet != null, true);
 
