@@ -8,7 +8,7 @@ part of visitor;
  * Visitor that produces a formatted string representation of the CSS tree.
  */
 class CssPrinter extends Visitor {
-  final StringBuffer _buff = new StringBuffer();
+  StringBuffer _buff = new StringBuffer();
   bool prettyPrint = true;
 
   /**
@@ -17,13 +17,13 @@ class CssPrinter extends Visitor {
    */
   void visitTree(StyleSheet tree, {bool pretty: false}) {
     prettyPrint = pretty;
-    _buff.clear();
+    _buff = new StringBuffer();
     visitStyleSheet(tree);
   }
 
   /** Appends [str] to the output buffer. */
   void emit(String str) {
-    _buff.add(str);
+    _buff.write(str);
   }
 
   /** Returns the output buffer. */

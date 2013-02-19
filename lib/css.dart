@@ -72,11 +72,11 @@ _time(String message, callback(), bool printTime) {
 
 void _printMessage(String message, int duration) {
   var buf = new StringBuffer();
-  buf.add(message);
-  for (int i = message.length; i < 60; i++) buf.add(' ');
-  buf.add(' -- ');
-  if (duration < 10) buf.add(' ');
-  if (duration < 100) buf.add(' ');
-  buf..add(duration)..add(' ms');
+  buf.write(message);
+  for (int i = message.length; i < 60; i++) buf.write(' ');
+  buf.write(' -- ');
+  if (duration < 10) buf.write(' ');
+  if (duration < 100) buf.write(' ');
+  buf..write(duration)..write(' ms');
   print(buf.toString());
 }

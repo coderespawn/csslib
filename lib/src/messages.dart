@@ -46,14 +46,14 @@ class Message {
     var output = new StringBuffer();
     bool colors = useColors && _ERROR_COLORS.containsKey(level);
     var levelColor =  _ERROR_COLORS[level];
-    if (colors) output.add(levelColor);
-    output..add(level.name)..add(' ');
-    if (colors) output.add(NO_COLOR);
+    if (colors) output.write(levelColor);
+    output..write(level.name)..write(' ');
+    if (colors) output.write(NO_COLOR);
 
     if (span == null) {
-      output.add(message);
+      output.write(message);
     } else {
-      output.add(span.getLocationMessage(message, useColors: colors,
+      output.write(span.getLocationMessage(message, useColors: colors,
           color: levelColor));
     }
 
