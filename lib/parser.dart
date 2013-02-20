@@ -4,14 +4,13 @@
 
 library parser;
 
-import 'dart:io';
+import 'dart:io' as io;
 import 'dart:math' as math;
 
 import 'package:pathos/path.dart' as path;
-import 'package:source_maps/span.dart' show Span;
+import 'package:source_maps/span.dart' show File, Span;
 
 import "visitor.dart";
-import 'src/files.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
 
@@ -38,7 +37,7 @@ StyleSheet parse(var input, {List errors, List options}) {
   }
   var opt = PreprocessorOptions.parse(options);
   messages = new Messages(options: opt, printHandler: errors.add);
-  return new Parser(new SourceFile(null, source: source)).parse();
+  return new Parser(new File.text(null, source), source).parse();
 }
 
 /**
@@ -59,7 +58,7 @@ StyleSheet selector(var input, {List errors}) {
     errors.add(obj);
   });
 
-  var p = new Parser(new SourceFile(null, source: source));
+  var p = new Parser(new File.text(null, source), source);
   return p.parseSelector();
 }
 
@@ -102,16 +101,16 @@ class Parser {
 
   Tokenizer tokenizer;
 
-  String _basePath;               // Base path of CSS file.
+  final String _basePath;               // Base path of CSS file.
 
-  final SourceFile source;
+  final File file;
 
   Token _previousToken;
   Token _peekToken;
 
-  Parser(this.source, [int start = 0, String basePath])
-      : _basePath = basePath {
-    tokenizer = new Tokenizer(source, true, start);
+  Parser(File file, String text, [int start = 0, this._basePath])
+      : this.file = file,
+        tokenizer = new Tokenizer(file, text, true, start) {
     _peekToken = tokenizer.next();
   }
 
@@ -243,7 +242,7 @@ class Parser {
     // TODO(terry): there are places where we are creating spans before we eat
     // the tokens, so using _previousToken.end is not always valid.
     var end = _previousToken.end >= start ? _previousToken.end : _peekToken.end;
-    return source.file.span(start, end);
+    return file.span(start, end);
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -488,14 +487,14 @@ class Parser {
         // TODO(sigmund,terry): this code seemed to be broken and unreachable
         // (there was no fileExist or readAll methods defined anywhere in the
         // original code).
-        if (new File(path.join(_basePath, filename)).existsSync()) {
+        if (new io.File(path.join(_basePath, filename)).existsSync()) {
           var dir = path.dirname(filename);
           var basePath = path.join(_basePath, dir);
           // Yes, let's parse this file as well.
           var fullFN = path.join(basePath, filename);
-          var contents = new File(fullFN).readAsStringSync();
+          var contents = new io.File(fullFN).readAsStringSync();
           Parser parser = new Parser(
-              new SourceFile(fullFN, source: contents), 0, basePath);
+              new File.text(fullFN, contents), contents, 0, basePath);
           StyleSheet stylesheet = parser.parse();
           return new IncludeDirective(filename, stylesheet, _makeSpan(start));
         }
@@ -1625,7 +1624,7 @@ class Parser {
 
     // All characters between quotes is the string.
     int end = _peekToken.end;
-    var stringValue = _peekToken.source.text.substring(start, end - 1);
+    var stringValue = _peekToken.span.file.getText(start, end - 1);
 
     if (stopToken != TokenKind.RPAREN) {
       _next();    // Skip the SINGLE_QUOTE or DOUBLE_QUOTE;

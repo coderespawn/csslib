@@ -10,10 +10,10 @@ import 'dart:io';
 import 'dart:math' as Math;
 
 import 'package:pathos/path.dart' as path;
+import 'package:source_maps/span.dart' as source_maps;
 
 import 'parser.dart';
 import 'visitor.dart';
-import 'src/files.dart';
 import 'src/messages.dart';
 import 'src/options.dart';
 
@@ -32,25 +32,25 @@ void main() {
 void _compile(String inputPath, bool verbose) {
   var ext = path.extension(inputPath);
   if (ext != '.css' && ext != '.scss') {
-    messages.error("Please provide a CSS/Sass entry point.", null);
+    messages.error("Please provide a CSS/Sass file", null);
     return;
   }
   try {
     // Read the file.
     var filename = path.basename(inputPath);
-    var file = new SourceFile(inputPath,
-        source: new File(inputPath).readAsStringSync());
+    var contents = new File(inputPath).readAsStringSync();
+    var file = new source_maps.File.text(inputPath, contents);
 
     // Parse the CSS.
-    file.tree = _time('Parse $filename',
-        () => new Parser(file).parse(), verbose);
+    var tree = _time('Parse $filename',
+        () => new Parser(file, contents).parse(), verbose);
 
     // Emit the processed CSS.
     var emitter = new CssPrinter();
     _time('Codegen $filename',
-        () => emitter.visitTree(file.tree, pretty: true), verbose);
+        () => emitter.visitTree(tree, pretty: true), verbose);
 
-    // Dump the contents to a file.
+    // Write the contents to a file.
     var outPath = path.join(path.dirname(inputPath), '_$filename');
     new File(outPath).writeAsStringSync(emitter.toString());
   } catch (e) {
@@ -59,14 +59,13 @@ void _compile(String inputPath, bool verbose) {
 }
 
 _time(String message, callback(), bool printTime) {
+  if (!printTime) return callback();
   final watch = new Stopwatch();
   watch.start();
   var result = callback();
   watch.stop();
   final duration = watch.elapsedMilliseconds;
-  if (printTime) {
-    _printMessage(message, duration);
-  }
+  _printMessage(message, duration);
   return result;
 }
 

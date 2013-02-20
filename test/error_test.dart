@@ -27,7 +27,7 @@ void testUnsupportedFontWeights() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unknown property value bolder
+error :1:24: Unknown property value bolder
 .foobar { font-weight: bolder; }
                        ^^^^^^''');
   expect(stylesheet != null, true);
@@ -45,7 +45,7 @@ SEVERE :1:24: Unknown property value bolder
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unknown property value lighter
+error :1:24: Unknown property value lighter
 .foobar { font-weight: lighter; }
                        ^^^^^^^''');
   expect(stylesheet != null, true);
@@ -62,7 +62,7 @@ SEVERE :1:24: Unknown property value lighter
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unknown property value inherit
+error :1:24: Unknown property value inherit
 .foobar { font-weight: inherit; }
                        ^^^^^^^''');
   expect(stylesheet != null, true);
@@ -85,7 +85,7 @@ void testUnsupportedLineHeights() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unexpected value for line-height
+error :1:24: Unexpected value for line-height
 .foobar { line-height: 120%; }
                        ^^^''');
   expect(stylesheet != null, true);
@@ -102,7 +102,7 @@ SEVERE :1:24: Unexpected value for line-height
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unexpected unit for line-height
+error :1:24: Unexpected unit for line-height
 .foobar { line-height: 20cm; }
                        ^^''');
   expect(stylesheet != null, true);
@@ -119,7 +119,7 @@ SEVERE :1:24: Unexpected unit for line-height
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:24: Unknown property value inherit
+error :1:24: Unknown property value inherit
 .foobar { line-height: inherit; }
                        ^^^^^^^''');
   expect(stylesheet != null, true);
@@ -139,7 +139,7 @@ void testBadSelectors() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:1: Not a valid ID selector expected #id
+error :1:1: Not a valid ID selector expected #id
 # foo { color: #ff00ff; }
 ^''');
   expect(stylesheet != null, true);
@@ -155,7 +155,7 @@ SEVERE :1:1: Not a valid ID selector expected #id
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:1: Not a valid class selector expected .className
+error :1:1: Not a valid class selector expected .className
 . foo { color: #ff00ff; }
 ^''');
   expect(stylesheet != null, true);
@@ -175,7 +175,7 @@ void testBadHexValues() {
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:18: Bad hex number
+error :1:18: Bad hex number
 .foobar { color: #AH787; }
                  ^^^^^^''');
   expect(stylesheet != null, true);
@@ -191,7 +191,7 @@ SEVERE :1:18: Bad hex number
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:18: Unknown property value redder
+error :1:18: Unknown property value redder
 .foobar { color: redder; }
                  ^^^^^^''');
 
@@ -208,7 +208,7 @@ SEVERE :1:18: Unknown property value redder
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:18: Expected hex number
+error :1:18: Expected hex number
 .foobar { color: # ffffff; }
                  ^''');
 
@@ -225,7 +225,7 @@ SEVERE :1:18: Expected hex number
 
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:18: Expected hex number
+error :1:18: Expected hex number
 .foobar { color: # 123fff; }
                  ^''');
 

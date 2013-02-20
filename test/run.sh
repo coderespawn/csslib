@@ -25,7 +25,7 @@ if [[ ($TEST_PATTERN == "") ]]; then
   pushd $DIR/..
   echo Analyzing compiler for warnings or type errors
   dart_analyzer --fatal-warnings --fatal-type-errors bin/css.dart \
-    --work analyzer_out
+    --work analyzer_out || true
   rm -r analyzer_out
   popd
 fi

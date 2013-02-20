@@ -5,16 +5,9 @@
 part of parser;
 
 class Tokenizer extends TokenizerBase {
-  TokenKind cssTokens;
-
-  bool _selectorParsing;
-
-  Tokenizer(SourceFile source, bool skipWhitespace, [int index = 0])
-    : super(source, skipWhitespace, index), _selectorParsing = false {
-    cssTokens = new TokenKind();
-  }
-
-  int get startIndex => _startIndex;
+  Tokenizer(File file, String text, bool skipWhitespace,
+      [int index = 0])
+      : super(file, text, skipWhitespace, index);
 
   Token next() {
     // keep track of our starting position
@@ -25,8 +18,6 @@ class Tokenizer extends TokenizerBase {
     switch (ch) {
       case TokenChar.NEWLINE:
       case TokenChar.RETURN:
-        // TODO(terry): Can't fall-thru; analyzer warning w/o return.
-        return finishWhitespace();
       case TokenChar.SPACE:
       case TokenChar.TAB:
         return finishWhitespace();
@@ -336,4 +327,3 @@ class TokenizerHelpers {
     return (isIdentifierStart(c) || isDigit(c) || c == 45 /*-*/);
   }
 }
-

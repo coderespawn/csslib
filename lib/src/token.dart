@@ -11,19 +11,19 @@ class Token {
   /** A member of [TokenKind] specifying what kind of token this is. */
   final int kind;
 
-  /** The [SourceFile] this token came from. */
-  final SourceFile source;
+  /** The location where this token was parsed from. */
+  final Span span;
 
-  /** The start and end indexes into the [SourceFile] of this [Token]. */
-  final int start, end;
+  /** The start offset of this token. */
+  int get start => span.start.offset;
 
-  Token(this.kind, this.source, this.start, this.end);
+  /** The end offset of this token. */
+  int get end => span.end.offset;
 
   /** Returns the source text corresponding to this [Token]. */
-  String get text => source.text.substring(start, end);
+  String get text => span.text;
 
-  /** Returns a [Span] representing the source location. */
-  Span get span => source.file.span(start, end);
+  Token(this.kind, this.span);
 
   /** Returns a pretty representation of this token for error messages. **/
   String toString() {
@@ -43,13 +43,11 @@ class Token {
 /** A token containing a parsed literal value. */
 class LiteralToken extends Token {
   var value;
-  LiteralToken(kind, source, start, end, this.value)
-      : super(kind, source, start, end);
+  LiteralToken(int kind, Span span, this.value) : super(kind, span);
 }
 
 /** A token containing error information. */
 class ErrorToken extends Token {
   String message;
-  ErrorToken(kind, source, start, end, this.message)
-      : super(kind, source, start, end);
+  ErrorToken(int kind, Span span, this.message) : super(kind, span);
 }

@@ -10,9 +10,9 @@ part of parser;
  * the generated parts in the subclass Tokenizer.
  */
 abstract class TokenizerBase {
-  final SourceFile _source;
+  final File _file;
   final bool _skipWhitespace;
-  String _text;
+  final String _text;
 
   int _index;
   int _startIndex;
@@ -20,10 +20,8 @@ abstract class TokenizerBase {
   const String _CDATA_START = '<![CDATA[';
   const String _CDATA_END = ']]>';
 
-  TokenizerBase(this._source, this._skipWhitespace, [index = 0])
-      : this._index = index {
-    _text = _source.text;
-  }
+  TokenizerBase(this._file, this._text, this._skipWhitespace,
+      [this._index = 0]);
 
   Token next();
   int getIdentifierKind();
@@ -66,12 +64,12 @@ abstract class TokenizerBase {
   }
 
   Token _finishToken(int kind) {
-    return new Token(kind, _source, _startIndex, _index);
+    return new Token(kind, _file.span(_startIndex, _index));
   }
 
   Token _errorToken([String message = null]) {
     return new ErrorToken(
-        TokenKind.ERROR, _source, _startIndex, _index, message);
+        TokenKind.ERROR, _file.span(_startIndex, _index), message);
   }
 
   Token finishWhitespace() {
@@ -224,20 +222,21 @@ abstract class TokenizerBase {
   Token _makeStringToken(List<int> buf, bool isPart) {
     final s = new String.fromCharCodes(buf);
     final kind = isPart ? TokenKind.STRING_PART : TokenKind.STRING;
-    return new LiteralToken(kind, _source, _startIndex, _index, s);
+    return new LiteralToken(kind, _file.span(_startIndex, _index), s);
   }
 
   Token _makeRawStringToken(bool isMultiline) {
-    String s;
+    var s;
     if (isMultiline) {
       // Skip initial newline in multiline strings
       int start = _startIndex + 4;
-      if (_source.text[start] == '\n') start++;
-      s = _source.text.substring(start, _index - 3);
+      if (_text[start] == '\n') start++;
+      s = _text.substring(start, _index - 3);
     } else {
-      s = _source.text.substring(_startIndex + 2, _index - 1);
+      s = _text.substring(_startIndex + 2, _index - 1);
     }
-    return new LiteralToken(TokenKind.STRING, _source, _startIndex, _index, s);
+    return new LiteralToken(TokenKind.STRING,
+        _file.span(_startIndex, _index), s);
   }
 
   Token finishMultilineString(int quote) {
@@ -378,9 +377,8 @@ abstract class TokenizerBase {
     if (hexValue < 0xD800 || hexValue > 0xDFFF && hexValue <= 0xFFFF) {
       return hexValue;
     } else if (hexValue <= 0x10FFFF){
-      var span = _source.file.span(_startIndex, _startIndex + 1);
       messages.error('unicode values greater than 2 bytes not implemented yet',
-          span);
+          _file.span(_startIndex, _startIndex + 1));
       return -1;
     } else {
       return -1;

@@ -32,6 +32,15 @@ final Map<Level, String> _ERROR_COLORS = (() {
   return colorsMap;
 })();
 
+/** Map between error levels and their friendly name. */
+final Map<Level, String> _ERROR_LABEL = (() {
+  var labels = new Map<Level, String>();
+  labels[Level.SEVERE] = 'error';
+  labels[Level.WARNING] = 'warning';
+  labels[Level.INFO] = 'info';
+  return labels;
+})();
+
 /** A single message from the compiler. */
 class Message {
   final Level level;
@@ -39,7 +48,7 @@ class Message {
   final Span span;
   final bool useColors;
 
-  Message(this.level, this.message, {Span span: null, bool useColors: false})
+  Message(this.level, this.message, {Span span, bool useColors: false})
       : this.span = span, this.useColors = useColors;
 
   String toString() {
@@ -47,7 +56,7 @@ class Message {
     bool colors = useColors && _ERROR_COLORS.containsKey(level);
     var levelColor =  _ERROR_COLORS[level];
     if (colors) output.write(levelColor);
-    output..write(level.name)..write(' ');
+    output..write(_ERROR_LABEL[level])..write(' ');
     if (colors) output.write(NO_COLOR);
 
     if (span == null) {

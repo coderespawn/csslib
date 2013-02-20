@@ -66,7 +66,7 @@ void testSelectorFailures() {
   var selectorAst = selector('.foobar .1a-story .xyzzy', errors: cssErrors);
   expect(cssErrors.isEmpty, false);
   expect(cssErrors[0].toString(), r'''
-SEVERE :1:9: name must start with a alpha character, but found a number
+error :1:9: name must start with a alpha character, but found a number
 .foobar .1a-story .xyzzy
         ^^''');
 }
