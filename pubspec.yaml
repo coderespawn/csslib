@@ -2,7 +2,7 @@ name: csslib
 author: "Dart Team <misc@dartlang.org>"
 homepage: https://github.com/dart-lang/csslib
 description: A library for parsing CSS.
-version: 0.3.4
+version: 0.3.4+1
 dependencies:
   args: any
   logging: any
@@ -12,4 +12,4 @@ dependencies:
   # used to parse test-suites code
   html5lib: any
 environment:
-  sdk: ">=0.3.7+5.r18669"
+  sdk: ">=0.3.7+5.r18717"
