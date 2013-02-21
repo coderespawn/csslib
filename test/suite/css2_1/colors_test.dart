@@ -13,6 +13,7 @@ import '../suite_files.dart';
 Map<String, Object> _ExeceptionMatches = {
   'color-001.xht' : replaceColors,
   'color-002.xht' : completeFixup,
+  'color-004.xht' : replaceColors,
   'color-005-ref.xht' :                     // Color mapping and spacing
     'body { background-color: black; } '
     'p { color: white; } '
@@ -22,8 +23,11 @@ Map<String, Object> _ExeceptionMatches = {
     'p { color: white; } '
     'img { height: 1in; vertical-align: top; width: 1in; }',
   'color-006.xht' : completeFixup,
+  'color-010.xht' : replaceColors,
   'color-012.xht' : completeFixup,
+  'color-015.xht' : replaceColors,
   'color-017.xht' : completeFixup,
+  'color-020.xht' : replaceColors,
   'color-022.xht' : completeFixup,
   'color-024.xht' : completeFixup,
   'color-025.xht' : completeFixup,

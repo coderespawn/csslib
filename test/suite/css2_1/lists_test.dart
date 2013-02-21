@@ -10,7 +10,11 @@ import 'package:unittest/unittest.dart';
 import '../../testing.dart';
 import '../suite_files.dart';
 
-Map<String, Object> _ExeceptionMatches = {};
+Map<String, Object> _ExeceptionMatches = {
+'list-style-type-armenian-001.xht' : replaceColors,
+'list-style-type-georgian-001.xht' : replaceColors,
+'list-style-type-lower-greek-001.xht' : replaceColors,
+};
 
 main() {
   var suite = new Suite('css2_1/src/lists');

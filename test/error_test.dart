@@ -145,7 +145,7 @@ error :1:1: Not a valid ID selector expected #id
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 # foo {
-  color: #ff00ff;
+  color: #f0f;
 }''');
 
   // Invalid class selector.
@@ -161,7 +161,7 @@ error :1:1: Not a valid class selector expected .className
   expect(stylesheet != null, true);
   expect(prettyPrint(stylesheet), r'''
 . foo {
-  color: #ff00ff;
+  color: #f0f;
 }''');
 }
 

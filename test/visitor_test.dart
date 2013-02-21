@@ -65,7 +65,7 @@ void testClassVisitors() {
 .foobar1 {
 }
 .xyzzy .foo #my-div {
-  color: #ff0000;
+  color: #f00;
 }
 div.hello {
   font: arial;

@@ -64,6 +64,9 @@ void testSimpleTerms() {
 void testDeclarations() {
   final String input = r'''
 .more {
+  color: white;
+  color: black;
+  color: cyan;
   color: red;
   color: #aabbcc;  /* test -- 3 */
   color: blue;
@@ -75,9 +78,12 @@ void testDeclarations() {
 }''';
   final String generated = r'''
 .more {
-  color: #ff0000;
-  color: #aabbcc;
+  color: #fff;
+  color: #000;
   color: #0ff;
+  color: #f00;
+  color: #abc;
+  color: #00f;
   background-image: url("http://test.jpeg");
   background-image: url("http://double_quote.html");
   background-image: url("http://single_quote.html");
@@ -110,7 +116,7 @@ void testIdentifiers() {
 }
 #foo {
   width: 10px;
-  color: #ff00cc;
+  color: #f0c;
 }''';
 
   var cssErrors = [];
@@ -324,6 +330,90 @@ void testNewerCss() {
   expect(prettyPrint(stylesheet), generated);
 }
 
+void testMediaQueries() {
+  String input = '''
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  .todo-item .toggle {
+    background: none;
+  }
+  #todo-item .toggle {
+    height: 40px;
+  }
+}''';
+  String generated = '''
+@media screen AND (-webkit-min-device-pixel-ratio:0) {
+.todo-item .toggle {
+  background: none;
+}
+#todo-item .toggle {
+  height: 40px;
+}
+}''';
+
+  var cssErrors = [];
+  var stylesheet = parseCss(input, errors: cssErrors,
+      opts: ['--no-colors', 'memory']);
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
+  expect(cssErrors.isEmpty, true);
+
+  expect(stylesheet != null, true);
+
+  expect(prettyPrint(stylesheet), generated);
+
+  input = '''
+  @media handheld and (min-width: 20em), 
+         screen and (min-width: 20em) {
+    #id { color: red; }
+    .myclass { height: 20px; }
+  }
+  @media print and (min-resolution: 300dpi) {
+    #anotherId {
+      color: #fff;
+    }
+  }
+  @media print and (min-resolution: 280dpcm) {
+    #finalId {
+      color: #aaa;
+    }
+    .class2 {
+      border: 20px;
+    }
+  }''';
+  generated = '''@media handheld AND (min-width:20em),screen AND (min-width:20em) {
+#id {
+  color: #f00;
+}
+.myclass {
+  height: 20px;
+}
+} @media print AND (min-resolution:300dpi) {
+#anotherId {
+  color: #fff;
+}
+} @media print AND (min-resolution:280dpcm) {
+#finalId {
+  color: #aaa;
+}
+.class2 {
+  border: 20px;
+}
+}''';
+
+  cssErrors = [];
+  stylesheet = parseCss(input, errors: cssErrors,
+      opts: ['--no-colors', 'memory']);
+
+  if (!cssErrors.isEmpty) {
+    print(cssErrors.toString());
+  }
+  expect(cssErrors.isEmpty, true);
+
+  expect(stylesheet != null, true);
+  expect(prettyPrint(stylesheet), generated);
+}
+
 void testCssFile() {
   final String input = r'''
 @import 'simple.css'
@@ -419,6 +509,7 @@ main() {
   test('Units', testUnits);
   test('Unicode', testUnicode);
   test('Newer CSS', testNewerCss);
+  test('Media Queries', testMediaQueries);
   test('CSS file', testCssFile);
   test('Compact Emitter', testCompactEmitter);
 }

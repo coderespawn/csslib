@@ -268,19 +268,63 @@ class Directive extends TreeNode {
 }
 
 class ImportDirective extends Directive {
-  String _import;
-  List<Identifier> _media;
+  String import;
+  List<MediaQuery> mediaQueries;
 
-  ImportDirective(this._import, this._media, Span span) : super(span);
+  ImportDirective(this.import, this.mediaQueries, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitImportDirective(this);
 }
 
-class MediaDirective extends Directive {
-  List<Identifier> media;
-  RuleSet ruleset;
+/**
+ *  MediaExpression grammar:
+ *    '(' S* media_feature S* [ ':' S* expr ]? ')' S*
+ */
+class MediaExpression extends TreeNode {
+  bool andOperator;
+  Identifier _mediaFeature;
+  Expressions exprs;
 
-  MediaDirective(this.media, this.ruleset, Span span) : super(span);
+  MediaExpression(this.andOperator, this._mediaFeature, this.exprs, Span span)
+      : super(span);
+
+  String get mediaFeature => _mediaFeature.name;
+
+  visit(VisitorBase visitor) => visitor.visitMediaExpression(this);
+}
+
+/**
+ * MediaQuery grammar:
+ *    : [ONLY | NOT]? S* media_type S* [ AND S* media_expression ]*
+ *    | media_expression [ AND S* media_expression ]*
+ *   media_type
+ *    : IDENT
+ *   media_expression
+ *    : '(' S* media_feature S* [ ':' S* expr ]? ')' S*
+ *   media_feature
+ *    : IDENT
+ */
+class MediaQuery extends TreeNode {
+  /** not, only or no operator. */
+  int _mediaUnary;
+  Identifier _mediaType;
+  List<MediaExpression> expressions;
+
+  MediaQuery(this._mediaUnary, this._mediaType, this.expressions, Span span)
+      : super(span);
+
+  String get mediaType => _mediaType.name;
+  String get unary => _mediaUnary != -1 ?
+      '${TokenKind.idToValue(TokenKind.MEDIA_OPERATORS, _mediaUnary)} ' : '';
+
+  visit(VisitorBase visitor) => visitor.visitMediaQuery(this);
+}
+
+class MediaDirective extends Directive {
+  List<MediaQuery> mediaQueries;
+  List<RuleSet> rulesets;
+
+  MediaDirective(this.mediaQueries, this.rulesets, Span span) : super(span);
 
   visit(VisitorBase visitor) => visitor.visitMediaDirective(this);
 }

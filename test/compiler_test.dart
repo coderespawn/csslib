@@ -499,7 +499,7 @@ void testArrayOfChars() {
 
   expect(prettyPrint(stylesheet), r'''
 .foo {
-  color: #ff0000;
+  color: #f00;
   left: 20px;
   top: 20px;
   width: 100px;
@@ -538,7 +538,7 @@ void testEmitter() {
 
   expect(prettyPrint(stylesheet), r'''
 .foo {
-  color: #ff0000;
+  color: #f00;
   left: 20px;
   top: 20px;
   width: 100px;

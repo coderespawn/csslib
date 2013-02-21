@@ -10,7 +10,9 @@ import 'package:unittest/unittest.dart';
 import '../../testing.dart';
 import '../suite_files.dart';
 
-Map<String, Object> _ExeceptionMatches = {};
+Map<String, Object> _ExeceptionMatches = {
+  'page-background-000.xht' : replaceColors,
+};
 
 main() {
   var suite = new Suite('css3-page/src');

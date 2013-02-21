@@ -12,10 +12,14 @@ import '../suite_files.dart';
 
 Map<String, Object> _ExeceptionMatches = {
   'outline-color-002.xht' : completeFixup,
+  'outline-color-004.xht' : replaceColors,
   'outline-color-005.xht' : completeFixup,
   'outline-color-006.xht' : completeFixup,
+  'outline-color-010.xht' : replaceColors,
   'outline-color-012.xht' : completeFixup,
+  'outline-color-015.xht' : replaceColors,
   'outline-color-017.xht' : completeFixup,
+  'outline-color-020.xht' : replaceColors,
   'outline-color-022.xht' : completeFixup,
   'outline-color-025.xht' : completeFixup,
 };

@@ -10,7 +10,9 @@ import 'package:unittest/unittest.dart';
 import '../../testing.dart';
 import '../suite_files.dart';
 
-Map<String, Object> _ExeceptionMatches = {};
+Map<String, Object> _ExeceptionMatches = {
+  'margin-collapse-142.xht' : replaceColors,
+};
 
 main() {
   var suite = new Suite('css2_1/src/floats-clear');

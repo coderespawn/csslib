@@ -49,10 +49,25 @@ class _TreePrinter extends Visitor {
     output.depth--;
   }
 
+  void visitMediaExpression(MediaExpression node) {
+    output.heading('MediaExpression');
+    output.writeValue('feature', node.mediaFeature);
+    if (node.andOperator) output.writeValue('AND operator', '');
+    visitExpressions(node.exprs);
+  }
+
+  void visitMediaQueries(MediaQuery query) {
+    output.headeing('MediaQueries');
+    output.writeValue('unary', query.unary);
+    output.writeValue('media type', query.mediaType);
+    output.writeNodeList('media expressions', query.expressions);
+  }
+
   void visitMediaDirective(MediaDirective node) {
     output.heading('MediaDirective', node.span);
     output.depth++;
-    output.writeNodeList('media', node.media);
+    output.writeNodeList('media queries', node.mediaQueries);
+    output.writeNodeList('rule sets', node.rulesets);
     super.visitMediaDirective(node);
     output.depth--;
   }
@@ -68,9 +83,9 @@ class _TreePrinter extends Visitor {
   void visitImportDirective(ImportDirective node) {
     output.heading('ImportDirective', node.span);
     output.depth++;
-    output.writeValue('import', node._import);
+    output.writeValue('import', node.import);
     super.visitImportDirective(node);
-    output.writeNodeList('media', node._media);
+    output.writeNodeList('media', node.mediaQueries);
     output.depth--;
   }
 

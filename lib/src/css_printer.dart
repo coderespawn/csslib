@@ -46,16 +46,37 @@ class CssPrinter extends Visitor {
     emit('<!-- ${node.comment} -->');
   }
 
+  void visitMediaExpression(MediaExpression node) {
+    emit(node.andOperator ? ' AND ' : ' ');
+    emit('(${node.mediaFeature}:');
+    visitExpressions(node.exprs);
+    emit(')');
+  }
+
+  void visitMediaQuery(MediaQuery query) {
+    emit('${query.unary}${query.mediaType}');
+    for (var expression in query.expressions) {
+      visitMediaExpression(expression);
+    }
+  }
+
+  void emitMediaQueries(queries, [forceSpace = false]) {
+    var queriesLen = queries.length;
+    for (var idx = 0; idx < queriesLen; idx++) {
+      if (!forceSpace && idx == 0) emit(' ');
+      if (idx > 0) emit(',');
+      var query = queries[idx];
+      visitMediaQuery(query);
+    }
+  }
+
   void visitMediaDirective(MediaDirective node) {
     emit(' @media');
-    var media = node.media;
-    var mediaLen = media.length;
-    for (var idx = 0; idx < mediaLen; idx++) {
-      emit(idx == 0 ? ' ' : ',');
-      media[idx].visit(this);
-    }
+    emitMediaQueries(node.mediaQueries);
     emit(' {');
-    node.ruleset.visit(this);
+    for (var ruleset in node.rulesets) {
+      ruleset.visit(this);
+    }
     emit('$_newLine\}');
   }
 
@@ -84,24 +105,18 @@ class CssPrinter extends Visitor {
   void visitImportDirective(ImportDirective node) {
     bool isStartingQuote(String ch) => ('\'"'.indexOf(ch) >= 0);
 
-    if (isStartingQuote(node._import)) {
-      emit(' @import "${node._import}"');
+    if (isStartingQuote(node.import)) {
+      emit(' @import "${node.import}"');
     } else {
       if (_isTesting) {
         // Emit exactly was we parsed.
-        emit(' @import url(${node._import})');
+        emit(' @import url(${node.import})');
       } else {
         // url(...) isn't needed only a URI can follow an @import directive.
-        emit(' @import ${node._import}');
+        emit(' @import ${node.import}');
       }
     }
-
-    var media = node._media;
-    var mediaLen = media.length;
-    for (var idx = 0; idx < mediaLen; idx++) {
-      emit(idx == 0 ? '$_sp' : ',');
-      media[idx].visit(this);
-    }
+    emitMediaQueries(node.mediaQueries, _isTesting);
     emit(';');
   }
 

@@ -12,6 +12,8 @@ import '../suite_files.dart';
 
 Map<String, Object> _ExeceptionMatches = {
   'at-page-rule-001.xht' :  SKIP_TEST,      // TODO(terry): Enable this test.
+  'page-container-008.xht' : replaceColors,
+  'page-container-009.xht' : replaceColors,
   'page-selectors-003.xht' : stripExtraSpacesCR,
 };
 

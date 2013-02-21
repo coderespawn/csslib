@@ -8,7 +8,7 @@ import 'dart:io' as io;
 import 'dart:math' as math;
 
 import 'package:pathos/path.dart' as path;
-import 'package:source_maps/span.dart' show File, Span;
+import 'package:source_maps/span.dart' show File, Span, FileSpan;
 
 import "visitor.dart";
 import 'src/messages.dart';
@@ -282,37 +282,115 @@ class Parser {
   // Productions
   ///////////////////////////////////////////////////////////////////
 
-  List<Identifier> processMedia([bool oneRequired = false]) {
-    var media = [];
+  /**
+   * The media_query_list production below replaces the media_list production
+   * from CSS2 the new grammar is:
+   *
+   *   media_query_list
+   *    : S* [media_query [ ',' S* media_query ]* ]?
+   *   media_query
+   *    : [ONLY | NOT]? S* media_type S* [ AND S* expression ]*
+   *    | expression [ AND S* expression ]*
+   *   media_type
+   *    : IDENT
+   *   expression
+   *    : '(' S* media_feature S* [ ':' S* expr ]? ')' S*
+   *   media_feature
+   *    : IDENT
+   */
+  List<MediaQuery> processMediaQueryList() {
+    var mediaQueries = [];
 
-    while (_peekIdentifier()) {
-      // We have some media types.
-      var medium = identifier();   // Medium ident.
-      media.add(medium);
-      if (!_maybeEat(TokenKind.COMMA)) {
-        // No more media types exit now.
-        break;
+    var mediaQuery;
+    do {
+      mediaQuery = processMediaQuery();
+      if (mediaQuery != null) {
+        mediaQueries.add(mediaQuery);
+        if (!_maybeEat(TokenKind.COMMA)) {
+          // No more media types exit now.
+          break;
+        }
+      }
+    } while (mediaQuery != null);
+
+    return mediaQueries;
+  }
+
+  MediaQuery processMediaQuery() {
+    // Grammar: [ONLY | NOT]? S* media_type S*
+    //          [ AND S* MediaExpr ]* | MediaExpr [ AND S* MediaExpr ]*
+
+    int start = _peekToken.start;
+
+    // Is it a unary media operator?
+    var op = _peekToken.text;
+    var opLen = op.length;
+    var unaryOp = TokenKind.matchMediaOperator(op, 0, opLen);
+    if (unaryOp == -1 ||
+        unaryOp == TokenKind.MEDIA_OP_NOT ||
+        unaryOp == TokenKind.MEDIA_OP_ONLY) {
+
+      if (_peekIdentifier()) {
+        var type = identifier();           // Media type.
+        var exprs = [];
+
+        if (unaryOp == -1 || unaryOp == TokenKind.MEDIA_OP_AND) {
+          while (true) {
+            op = _peekToken.text;
+            opLen = op.length;
+            op = TokenKind.matchMediaOperator(op, 0, opLen);
+            var andOp = op == TokenKind.MEDIA_OP_AND;
+            if (andOp) _next();
+            var expr = processMediaExpression(andOp);
+            if (expr != null) exprs.add(expr);
+            if (!andOp) break;
+          }
+        }
+
+        return new MediaQuery(unaryOp, type, exprs, _makeSpan(start));
+      }
+    } else if (messages.options.checked) {
+      _warning("Only unary operators NOT and ONLY allowed", _makeSpan(start));
+    }
+  }
+
+  MediaExpression processMediaExpression([bool andOperator = false]) {
+    int start = _peekToken.start;
+
+    // Grammar: '(' S* media_feature S* [ ':' S* expr ]? ')' S*
+    if (_maybeEat(TokenKind.LPAREN)) {
+      if (_peekIdentifier()) {
+        var feature = identifier();           // Media feature.
+        while (_maybeEat(TokenKind.COLON)) {
+          int startExpr = _peekToken.start;
+          var exprs = processExpr();
+          if (_maybeEat(TokenKind.RPAREN)) {
+            return new MediaExpression(andOperator, feature, exprs,
+                _makeSpan(startExpr));
+          } else if (messages.options.checked) {
+            _warning("Missing parenthesis around media expression",
+                _makeSpan(start));
+            return null;
+          }
+        }
+      } else if (messages.options.checked) {
+        _warning("Missing media feature in media expression", _makeSpan(start));
+        return null;
       }
     }
-
-    if (oneRequired && media.length == 0) {
-      _error('at least one media type required', _peekToken.span);
-    }
-
-    return media;
   }
 
   //  Directive grammar:
   //
-  //  import:       '@import' [string | URI] media_list?
-  //  media:        '@media' media_list '{' ruleset '}'
-  //  page:         '@page' [':' IDENT]? '{' declarations '}'
-  //  include:      '@include' [string | URI]
-  //  stylet:       '@stylet' IDENT '{' ruleset '}'
-  //  media_list:   IDENT [',' IDENT]
-  //  keyframes:    '@-webkit-keyframes ...' (see grammar below).
-  //  font_face:    '@font-face' '{' declarations '}'
-  //  namespace:    '@namespace name url("xmlns")
+  //  import:             '@import' [string | URI] media_list?
+  //  media:              '@media' media_query_list '{' ruleset '}'
+  //  page:               '@page' [':' IDENT]? '{' declarations '}'
+  //  include:            '@include' [string | URI]
+  //  stylet:             '@stylet' IDENT '{' ruleset '}'
+  //  media_query_list:   IDENT [',' IDENT]
+  //  keyframes:          '@-webkit-keyframes ...' (see grammar below).
+  //  font_face:          '@font-face' '{' declarations '}'
+  //  namespace:          '@namespace name url("xmlns")
   //
   processDirective() {
     int start = _peekToken.start;
@@ -359,7 +437,7 @@ class Parser {
         }
 
         // Any medias?
-        var medias = processMedia();
+        var medias = processMediaQueryList();
 
         if (importStr == null) {
           _error('missing import string', _peekToken.span);
@@ -371,18 +449,25 @@ class Parser {
         _next();
 
         // Any medias?
-        var media = processMedia(true);
-        RuleSet ruleset;
+        var media = processMediaQueryList();
 
+        List<TreeNode> rulesets = [];
         if (_maybeEat(TokenKind.LBRACE)) {
-          ruleset = processRuleSet();
+          while (!_maybeEat(TokenKind.END_OF_FILE)) {
+            RuleSet ruleset = processRuleSet();
+            if (ruleset == null) {
+              break;
+            }
+            rulesets.add(ruleset);
+          }
+
           if (!_maybeEat(TokenKind.RBRACE)) {
             _error('expected } after ruleset for @media', _peekToken.span);
           }
         } else {
           _error('expected { after media before ruleset', _peekToken.span);
         }
-        return new MediaDirective(media, ruleset, _makeSpan(start));
+        return new MediaDirective(media, rulesets, _makeSpan(start));
 
       case TokenKind.DIRECTIVE_PAGE:
         /*
@@ -1495,7 +1580,7 @@ class Parser {
           int colorValue = TokenKind.matchColorName(nameValue.name);
 
           // Yes, process the color as an RGB value.
-          String rgbColor = TokenKind.decimalToHex(colorValue, 3);
+          String rgbColor = TokenKind.decimalToHex(colorValue, 6);
           return _parseHex(rgbColor, _makeSpan(start));
         } catch (error) {
           if (error is NoColorMatchException) {
@@ -1624,7 +1709,7 @@ class Parser {
 
     // All characters between quotes is the string.
     int end = _peekToken.end;
-    var stringValue = _peekToken.span.file.getText(start, end - 1);
+    var stringValue = (_peekToken.span as FileSpan).file.getText(start, end - 1);
 
     if (stopToken != TokenKind.RPAREN) {
       _next();    // Skip the SINGLE_QUOTE or DOUBLE_QUOTE;
@@ -1711,6 +1796,21 @@ class Parser {
       hexValue = (hexValue << 4) + digit;
     }
 
+    // Make 3 character hex value #RRGGBB => #RGB iff:
+    // high/low nibble of RR is the same, high/low nibble of GG is the same and
+    // high/low nibble of BB is the same.
+    if (hexText.length == 6 &&
+        hexText[0] == hexText[1] &&
+        hexText[2] == hexText[3] &&
+        hexText[4] == hexText[5]) {
+      hexText = '${hexText[0]}${hexText[2]}${hexText[4]}';
+    } else if (hexText.length == 4 &&
+        hexText[0] == hexText[1] &&
+        hexText[2] == hexText[3]) {
+      hexText = '${hexText[0]}${hexText[2]}';
+    } else if (hexText.length == 2 && hexText[0] == hexText[1]) {
+      hexText = '${hexText[0]}';
+    }
     return new HexColorTerm(hexValue, hexText, span);
   }
 }

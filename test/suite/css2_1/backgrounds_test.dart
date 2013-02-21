@@ -12,9 +12,13 @@ import '../suite_files.dart';
 
 Map<String, Object> _ExeceptionMatches = {
   'background-color-002.xht' : replaceColors,
+  'background-color-004.xht' : replaceColors,
   'background-color-006.xht' : replaceColors,
+  'background-color-010.xht' : replaceColors,
   'background-color-012.xht' : replaceColors,
+  'background-color-015.xht' : replaceColors,
   'background-color-017.xht' : replaceColors,
+  'background-color-020.xht' : replaceColors,
   'background-color-022.xht' : replaceColors,
   'background-color-024.xht' : replaceColors,
   'background-color-025.xht' : replaceColors,

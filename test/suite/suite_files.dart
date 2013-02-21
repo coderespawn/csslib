@@ -362,6 +362,16 @@ String replaceColors(String output) =>
         .replaceAll('#800000', 'maroon')
         .replaceAll('#000;', 'black;')
         .replaceAll('#fff;', 'white;')
+        .replaceAll('#dddddd;', '#ddd;')
+        .replaceAll('#ff6633;', '#f63;')
+        .replaceAll('#000099;', '#009;')
+        .replaceAll('#009900;', '#090;')
+        .replaceAll('#999999;', '#999;')
+        .replaceAll('#990000;', '#900;')
+        .replaceAll('#ccffcc;', '#cfc;')
+        .replaceAll('#AAFFAA;', '#AFA;')
+        .replaceAll('#ddffdd;', '#dfd;')
+        .replaceAll('#cc0000;', '#c00;')
         .replaceAll('cyan', 'aqua')             // Cyan and aqua are same.
         .replaceAll('Blue', 'blue');            // Blue is always blue.
 

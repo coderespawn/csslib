@@ -147,6 +147,11 @@ class TokenKind {
   static const int DIRECTIVE_FONTFACE = 657;
   static const int DIRECTIVE_NAMESPACE = 658;
 
+  // Media query operators
+  static const int MEDIA_OP_ONLY = 665;     // Unary.
+  static const int MEDIA_OP_NOT = 666;      // Unary.
+  static const int MEDIA_OP_AND = 667;      // Binary.
+
   // Directives inside of a @page (margin sym).
   static const int MARGIN_DIRECTIVE_TOPLEFTCORNER = 670;
   static const int MARGIN_DIRECTIVE_TOPLEFT = 671;
@@ -184,6 +189,12 @@ class TokenKind {
     const {'type': TokenKind.DIRECTIVE_FONTFACE, 'value' : 'font-face'},
     const {'type': TokenKind.DIRECTIVE_NAMESPACE, 'value' : 'namespace'},
   ];
+
+  static const List<Map<int, String>> MEDIA_OPERATORS = const [
+    const {'type': TokenKind.MEDIA_OP_ONLY, 'value' : 'only'},
+    const {'type': TokenKind.MEDIA_OP_NOT, 'value' : 'not'},
+    const {'type': TokenKind.MEDIA_OP_AND, 'value' : 'and'},
+];
 
   static const List<Map<int, String>> MARGIN_DIRECTIVES = const [
     const {'type': TokenKind.MARGIN_DIRECTIVE_TOPLEFTCORNER,
@@ -511,6 +522,11 @@ class TokenKind {
   /** Return the token that matches the margin directive name found. */
   static int matchMarginDirectives(String text, int offset, int length) {
     return matchList(MARGIN_DIRECTIVES, 'type', text, offset, length);
+  }
+
+  /** Return the token that matches the media operator found. */
+  static int matchMediaOperator(String text, int offset, int length) {
+    return matchList(MEDIA_OPERATORS, 'type', text, offset, length);
   }
 
   static String idToValue(var identList, int tokenId) {

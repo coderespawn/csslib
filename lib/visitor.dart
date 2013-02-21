@@ -18,6 +18,8 @@ abstract class VisitorBase {
   void visitStyleSheet(StyleSheet node);
   void visitTopLevelProduction(TopLevelProduction node);
   void visitDirective(Directive node);
+  void visitMediaExpression(MediaExpression node);
+  void visitMediaQuery(MediaQuery node);
   void visitMediaDirective(MediaDirective node);
   void visitPageDirective(PageDirective node);
   void visitImportDirective(ImportDirective node);
@@ -108,8 +110,23 @@ class Visitor implements VisitorBase {
 
   void visitCommentDefinition(CommentDefinition node) { }
 
+  void visitMediaExpression(MediaExpression node) {
+    visitExpressions(node.exprs);
+  }
+
+  void visitMediaQuery(MediaQuery node) {
+    for (var mediaExpr in node.expressions) {
+      visitMediaExpression(mediaExpr);
+    }
+  }
+
   void visitMediaDirective(MediaDirective node) {
-    visitRuleSet(node.ruleset);
+    for (var mediaQuery in node.mediaQueries) {
+      visitMediaQuery(mediaQuery);
+    }
+    for (var ruleset in node.rulesets) {
+      visitRuleSet(ruleset);
+    }
   }
 
   void visitPageDirective(PageDirective node) {
@@ -122,7 +139,11 @@ class Visitor implements VisitorBase {
     }
   }
 
-  void visitImportDirective(ImportDirective node) { }
+  void visitImportDirective(ImportDirective node) {
+    for (var mediaQuery in node.mediaQueries) {
+      visitMediaQuery(mediaQuery);
+    }
+  }
 
   void visitKeyFrameDirective(KeyFrameDirective node) {
     visitIdentifier(node._name);

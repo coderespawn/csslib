@@ -40,6 +40,8 @@ Map<String, Object> _ExeceptionMatches = {
     ' margin: -1.5em -0.5em; '
     '}',
   'c5525-fltwrap-000.xht' : completeFixup,
+  'c5526c-display-000.xht' : replaceColors,
+  'c532-bgcolor-000.xht' : replaceColors,
   'c563-list-type-000.xht' : SKIP_TEST,       // TODO(terry): Enable this test.
   'c61-ex-len-000-ref.xht' : stripSpacesAndComments,
   'c63-color-000.xht' : replaceColors,
