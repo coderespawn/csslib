@@ -7,50 +7,59 @@ part of visitor;
 // TODO(terry): Enable class for debug only; when conditional imports enabled.
 
 /** Helper function to dump the CSS AST. */
-String treeToDebugString(styleSheet) {
+String treeToDebugString(styleSheet, [bool useSpan = false]) {
   var to = new TreeOutput();
-  new _TreePrinter(to)..visitTree(styleSheet);
+  new _TreePrinter(to, useSpan)..visitTree(styleSheet);
   return to.toString();
 }
 
 /** Tree dump for debug output of the CSS AST. */
 class _TreePrinter extends Visitor {
   var output;
-  _TreePrinter(this.output) { output.printer = this; }
+  final bool useSpan;
+  _TreePrinter(this.output, this.useSpan) { output.printer = this; }
 
   void visitTree(tree) => visitStylesheet(tree);
 
+  void heading(String heading, node) {
+    if (useSpan) {
+      output.heading(heading, node.span);
+    } else {
+      output.heading(heading);
+    }
+  }
+
   void visitStylesheet(StyleSheet node) {
-    output.heading('Stylesheet', node.span);
+    heading('Stylesheet', node);
     output.depth++;
     super.visitStyleSheet(node);
     output.depth--;
   }
 
   void visitTopLevelProduction(TopLevelProduction node) {
-    output.heading('TopLevelProduction', node.span);
+    heading('TopLevelProduction', node);
   }
 
   void visitDirective(Directive node) {
-    output.heading('Directive', node.span);
+    heading('Directive', node);
   }
 
   void visitCssComment(CssComment node) {
-    output.heading('Comment', node.span);
+    heading('Comment', node);
     output.depth++;
     output.writeValue('comment value', node.comment);
     output.depth--;
   }
 
   void visitCommentDefinition(CommentDefinition node) {
-    output.heading('CommentDefinition (CDO/CDC)', node.span);
+    heading('CommentDefinition (CDO/CDC)', node);
     output.depth++;
     output.writeValue('comment value', node.comment);
     output.depth--;
   }
 
   void visitMediaExpression(MediaExpression node) {
-    output.heading('MediaExpression');
+    heading('MediaExpression', node);
     output.writeValue('feature', node.mediaFeature);
     if (node.andOperator) output.writeValue('AND operator', '');
     visitExpressions(node.exprs);
@@ -64,7 +73,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitMediaDirective(MediaDirective node) {
-    output.heading('MediaDirective', node.span);
+    heading('MediaDirective', node);
     output.depth++;
     output.writeNodeList('media queries', node.mediaQueries);
     output.writeNodeList('rule sets', node.rulesets);
@@ -73,7 +82,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitPageDirective(PageDirective node) {
-    output.heading('PageDirective', node.span);
+    heading('PageDirective', node);
     output.depth++;
     output.writeValue('pseudo page', node._pseudoPage);
     super.visitPageDirective(node);
@@ -81,7 +90,7 @@ class _TreePrinter extends Visitor {
 }
 
   void visitImportDirective(ImportDirective node) {
-    output.heading('ImportDirective', node.span);
+    heading('ImportDirective', node);
     output.depth++;
     output.writeValue('import', node.import);
     super.visitImportDirective(node);
@@ -90,7 +99,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitKeyFrameDirective(KeyFrameDirective node) {
-    output.heading('KeyFrameDirective', node.span);
+    heading('KeyFrameDirective', node);
     output.depth++;
     output.writeValue('name', node._name);
     output.writeNodeList('blocks', node._blocks);
@@ -98,7 +107,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitKeyFrameBlock(KeyFrameBlock node) {
-    output.heading('KeyFrameBlock', node.span);
+    heading('KeyFrameBlock', node);
     output.depth++;
     super.visitKeyFrameBlock(node);
     output.depth--;
@@ -109,7 +118,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitIncludeDirective(IncludeDirective node) {
-    output.heading('IncludeDirective', node.span);
+    heading('IncludeDirective', node);
     output.writeValue('include', node._include);
     output.depth++;
     if (node._stylesheet != null) {
@@ -121,7 +130,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitStyletDirective(StyletDirective node) {
-    output.heading('StyletDirective', node.span);
+    heading('StyletDirective', node);
     output.writeValue('dartClassName', node._dartClassName);
     output.depth++;
     output.writeNodeList('rulesets', node._rulesets);
@@ -129,7 +138,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitNamespaceDirective(NamespaceDirective node) {
-    output.heading('NamespaceDirective', node.span);
+    heading('NamespaceDirective', node);
     output.depth++;
     output.writeValue('prefix', node._prefix);
     output.writeValue('uri', node._uri);
@@ -137,21 +146,21 @@ class _TreePrinter extends Visitor {
   }
 
   void visitRuleSet(RuleSet node) {
-    output.heading('Ruleset', node.span);
+    heading('Ruleset', node);
     output.depth++;
     super.visitRuleSet(node);
     output.depth--;
   }
 
   void visitDeclarationGroup(DeclarationGroup node) {
-    output.heading('DeclarationGroup', node.span);
+    heading('DeclarationGroup', node);
     output.depth++;
     output.writeNodeList('declarations', node._declarations);
     output.depth--;
   }
 
   void visitMarginGroup(MarginGroup node) {
-    output.heading('MarginGroup', node.span);
+    heading('MarginGroup', node);
     output.depth++;
     output.writeValue('@directive', node.margin_sym);
     output.writeNodeList('declarations', node._declarations);
@@ -159,7 +168,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitDeclaration(Declaration node) {
-    output.heading('Declaration', node.span);
+    heading('Declaration', node);
     output.depth++;
     output.write('property');
     super.visitDeclaration(node);
@@ -171,14 +180,14 @@ class _TreePrinter extends Visitor {
   }
 
   void visitSelectorGroup(SelectorGroup node) {
-    output.heading('Selector Group', node.span);
+    heading('Selector Group', node);
     output.depth++;
     output.writeNodeList('selectors', node.selectors);
     output.depth--;
   }
 
   void visitSelector(Selector node) {
-    output.heading('Selector', node.span);
+    heading('Selector', node);
     output.depth++;
     output.writeNodeList('simpleSelectorsSequences',
         node._simpleSelectorSequences);
@@ -186,7 +195,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitSimpleSelectorSequence(SimpleSelectorSequence node) {
-    output.heading('SimpleSelectorSequence', node.span);
+    heading('SimpleSelectorSequence', node);
     output.depth++;
     if (node.isCombinatorNone) {
       output.writeValue('combinator', "NONE");
@@ -208,7 +217,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitNamespaceSelector(NamespaceSelector node) {
-    output.heading('Namespace Selector', node.span);
+    heading('Namespace Selector', node);
     output.depth++;
 
     super.visitNamespaceSelector(node);
@@ -218,14 +227,14 @@ class _TreePrinter extends Visitor {
   }
 
   void visitElementSelector(ElementSelector node) {
-    output.heading('Element Selector', node.span);
+    heading('Element Selector', node);
     output.depth++;
     super.visitElementSelector(node);
     output.depth--;
   }
 
   void visitAttributeSelector(AttributeSelector node) {
-    output.heading('AttributeSelector', node.span);
+    heading('AttributeSelector', node);
     output.depth++;
     super.visitAttributeSelector(node);
     String tokenStr = node.matchOperatorAsTokenString();
@@ -235,28 +244,28 @@ class _TreePrinter extends Visitor {
   }
 
   void visitIdSelector(IdSelector node) {
-    output.heading('Id Selector', node.span);
+    heading('Id Selector', node);
     output.depth++;
     super.visitIdSelector(node);
     output.depth--;
   }
 
   void visitClassSelector(ClassSelector node) {
-    output.heading('Class Selector', node.span);
+    heading('Class Selector', node);
     output.depth++;
     super.visitClassSelector(node);
     output.depth--;
   }
 
   void visitPseudoClassSelector(PseudoClassSelector node) {
-    output.heading('Pseudo Class Selector', node.span);
+    heading('Pseudo Class Selector', node);
     output.depth++;
     super.visitPseudoClassSelector(node);
     output.depth--;
   }
 
   void visitPseudoElementSelector(PseudoElementSelector node) {
-    output.heading('Pseudo Element Selector', node.span);
+    heading('Pseudo Element Selector', node);
     output.depth++;
     super.visitPseudoElementSelector(node);
     output.depth--;
@@ -265,19 +274,19 @@ class _TreePrinter extends Visitor {
   void visitNotSelector(NotSelector node) {
     super.visitNotSelector(node);
     output.depth++;
-    output.heading('Not Selector', node.span);
+    heading('Not Selector', node);
     output.depth--;
   }
 
   void visitLiteralTerm(LiteralTerm node) {
-    output.heading('LiteralTerm', node.span);
+    heading('LiteralTerm', node);
     output.depth++;
     output.writeValue('value', node.text);
     output.depth--;
  }
 
   void visitHexColorTerm(HexColorTerm node) {
-    output.heading('HexColorTerm', node.span);
+    heading('HexColorTerm', node);
     output.depth++;
     output.writeValue('hex value', node.text);
     output.writeValue('decimal value', node.value);
@@ -285,7 +294,7 @@ class _TreePrinter extends Visitor {
   }
 
   void visitNumberTerm(NumberTerm node) {
-    output.heading('NumberTerm', node.span);
+    heading('NumberTerm', node);
     output.depth++;
     output.writeValue('value', node.text);
     output.depth--;
@@ -301,141 +310,141 @@ class _TreePrinter extends Visitor {
   }
 
   void visitLengthTerm(LengthTerm node) {
-    output.heading('LengthTerm', node.span);
+    heading('LengthTerm', node);
     super.visitLengthTerm(node);
   }
 
   void visitPercentageTerm(PercentageTerm node) {
-    output.heading('PercentageTerm', node.span);
+    heading('PercentageTerm', node);
     output.depth++;
     super.visitPercentageTerm(node);
     output.depth--;
   }
 
   void visitEmTerm(EmTerm node) {
-    output.heading('EmTerm', node.span);
+    heading('EmTerm', node);
     output.depth++;
     super.visitEmTerm(node);
     output.depth--;
   }
 
   void visitExTerm(ExTerm node) {
-    output.heading('ExTerm', node.span);
+    heading('ExTerm', node);
     output.depth++;
     super.visitExTerm(node);
     output.depth--;
   }
 
   void visitAngleTerm(AngleTerm node) {
-    output.heading('AngleTerm', node.span);
+    heading('AngleTerm', node);
     super.visitAngleTerm(node);
   }
 
   void visitTimeTerm(TimeTerm node) {
-    output.heading('TimeTerm', node.span);
+    heading('TimeTerm', node);
     super.visitTimeTerm(node);
   }
 
   void visitFreqTerm(FreqTerm node) {
-    output.heading('FreqTerm', node.span);
+    heading('FreqTerm', node);
     super.visitFreqTerm(node);
   }
 
   void visitFractionTerm(FractionTerm node) {
-    output.heading('FractionTerm', node.span);
+    heading('FractionTerm', node);
     output.depth++;
     super.visitFractionTerm(node);
     output.depth--;
   }
 
   void visitUriTerm(UriTerm node) {
-    output.heading('UriTerm', node.span);
+    heading('UriTerm', node);
     output.depth++;
     super.visitUriTerm(node);
     output.depth--;
   }
 
   void visitFunctionTerm(FunctionTerm node) {
-    output.heading('FunctionTerm', node.span);
+    heading('FunctionTerm', node);
     output.depth++;
     super.visitFunctionTerm(node);
     output.depth--;
   }
 
   void visitGroupTerm(GroupTerm node) {
-    output.heading('GroupTerm', node.span);
+    heading('GroupTerm', node);
     output.depth++;
     output.writeNodeList('grouped terms', node._terms);
     output.depth--;
   }
 
   void visitItemTerm(ItemTerm node) {
-    output.heading('ItemTerm', node.span);
+    heading('ItemTerm', node);
     super.visitItemTerm(node);
   }
 
   void visitOperatorSlash(OperatorSlash node) {
-    output.heading('OperatorSlash', node.span);
+    heading('OperatorSlash', node);
   }
 
   void visitOperatorComma(OperatorComma node) {
-    output.heading('OperatorComma', node.span);
+    heading('OperatorComma', node);
   }
 
   void visitExpressions(Expressions node) {
-    output.heading('Expressions', node.span);
+    heading('Expressions', node);
     output.depth++;
     output.writeNodeList('expressions', node._expressions);
     output.depth--;
   }
 
   void visitBinaryExpression(BinaryExpression node) {
-    output.heading('BinaryExpression', node.span);
+    heading('BinaryExpression', node);
     // TODO(terry): TBD
   }
 
   void visitUnaryExpression(UnaryExpression node) {
-    output.heading('UnaryExpression', node.span);
+    heading('UnaryExpression', node);
     // TODO(terry): TBD
   }
 
   void visitIdentifier(Identifier node) {
-    output.heading('Identifier(${output.toValue(node.name)})', node.span);
+    heading('Identifier(${output.toValue(node.name)})', node);
   }
 
   void visitWildcard(Wildcard node) {
-    output.heading('Wildcard(*)', node.span);
+    heading('Wildcard(*)', node);
   }
 
   void visitDartStyleExpression(DartStyleExpression node) {
-    output.heading('DartStyleExpression', node.span);
+    heading('DartStyleExpression', node);
   }
 
   void visitFontExpression(FontExpression node) {
-    output.heading('Dart Style FontExpression', node.span);
+    heading('Dart Style FontExpression', node);
   }
 
   void visitBoxExpression(BoxExpression node) {
-    output.heading('Dart Style BoxExpression', node.span);
+    heading('Dart Style BoxExpression', node);
   }
 
   void visitMarginExpression(MarginExpression node) {
-    output.heading('Dart Style MarginExpression', node.span);
+    heading('Dart Style MarginExpression', node);
   }
 
   void visitBorderExpression(BorderExpression node) {
-    output.heading('Dart Style BorderExpression', node.span);
+    heading('Dart Style BorderExpression', node);
   }
 
   void visitHeightExpression(HeightExpression node) {
-    output.heading('Dart Style HeightExpression', node.span);
+    heading('Dart Style HeightExpression', node);
   }
 
   void visitPaddingExpression(PaddingExpression node) {
-    output.heading('Dart Style PaddingExpression', node.span);
+    heading('Dart Style PaddingExpression', node);
   }
 
   void visitWidthExpression(WidthExpression node) {
-    output.heading('Dart Style WidthExpression', node.span);
+    heading('Dart Style WidthExpression', node);
   }
 }

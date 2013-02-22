@@ -36,11 +36,6 @@ if [[ ($TEST_PATTERN == "canary") || ($TEST_PATTERN = "") ]]; then
 else
   dart $DART_FLAGS run_all.dart $TEST_PATTERN
 fi
-if [[ ($TEST_PATTERN == "suite") || ($TEST_PATTERN = "") ]]; then
-  dart $DART_FLAGS suite/run_all.dart --dir=suite
-else
-  dart $DART_FLAGS suite/run_all.dart --dir=suite $TEST_PATTERN
-fi
 popd
 
 echo All tests completed.
