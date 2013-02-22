@@ -19,7 +19,7 @@ abstract class TreeNode {
   /** A multiline string showing the node and its children. */
   String toDebugString() {
     var to = new TreeOutput();
-    var tp = new _TreePrinter(to);
+    var tp = new _TreePrinter(to, true);
     this.visit(tp);
     return to.buf.toString();
   }
@@ -48,9 +48,11 @@ class TreeOutput {
     buf.write('\n');
   }
 
-  void heading(String name, span) {
+  void heading(String name, [span]) {
     write(name);
-    buf.write('  (${span.locationText})');
+    if (span != null) {
+      buf.write('  (${span.getLocationMessage('')})');
+    }
     buf.write('\n');
   }
 

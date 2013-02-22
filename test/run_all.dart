@@ -11,12 +11,13 @@ library run_impl;
 import 'dart:io';
 import 'package:unittest/unittest.dart';
 import 'package:unittest/compact_vm_config.dart';
+import 'testing.dart';
+
 import 'compiler_test.dart' as compiler_test;
 import 'declaration_test.dart' as declaration_test;
 import 'error_test.dart' as error_test;
 import 'selector_test.dart' as selector_test;
 import 'visitor_test.dart' as visitor_test;
-import 'testing.dart';
 
 main() {
   var args = new Options().arguments;
