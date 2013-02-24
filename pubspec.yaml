@@ -4,8 +4,8 @@ homepage: https://github.com/dart-lang/csslib
 description: A library for parsing CSS.
 version: 0.3.4+3
 dependencies:
-  args: any
+  args: 0.3.7+6
   logging: 0.3.7+6
   unittest: 0.3.7+6
-  pathos: any
+  pathos: 0.3.7+6
   source_maps: ">=0.3.2 <0.3.3"
