@@ -5,7 +5,7 @@ description: A library for parsing CSS.
 version: 0.3.4+3
 dependencies:
   args: any
-  logging: any
+  logging: 0.3.7+6
   unittest: 0.3.7+6
   pathos: any
   source_maps: ">=0.3.2 <0.3.3"
