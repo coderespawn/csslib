@@ -9,5 +9,3 @@ dependencies:
   unittest: any
   pathos: any
   source_maps: ">=0.3.2 <0.3.3"
-environment:
-  sdk: ">=0.3.7+5.r18717"
